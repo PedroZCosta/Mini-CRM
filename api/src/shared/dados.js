@@ -64,6 +64,18 @@ export function carregarDados() {
   return dados;
 }
 
+/**
+ * Ids criados nesta sessão.
+ *
+ * A API é sem estado: um cliente cadastrado agora existe só no front-end. Como
+ * o id gerado no POST tem forma própria (prefixo + underline), as rotas de
+ * escrita aceitam esses ids como legítimos, em vez de responder 404 e travar o
+ * fluxo de cadastrar e usar o registro em seguida.
+ */
+export function idGeradoNaSessao(id, prefixo) {
+  return new RegExp(`^${prefixo}_[a-z0-9]{4,}$`).test(String(id || ''));
+}
+
 export const ETAPAS = ['Prospecção', 'Contato', 'Proposta', 'Fechado'];
 export const STATUS_CLIENTE = ['Prospect', 'Ativo', 'Inativo'];
 export const TIPOS_INTERACAO = ['Ligação', 'E-mail', 'Reunião'];

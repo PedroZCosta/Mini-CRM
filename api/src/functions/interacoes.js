@@ -1,5 +1,5 @@
 import { app } from '@azure/functions';
-import { carregarDados } from '../shared/dados.js';
+import { carregarDados, idGeradoNaSessao } from '../shared/dados.js';
 import { criado, requisicaoInvalida, naoEncontrado, lerCorpo, novoId } from '../shared/http.js';
 import { validarInteracao } from '../shared/validacao.js';
 
@@ -17,7 +17,9 @@ app.http('interacoes-criar', {
   handler: async (request) => {
     const { id } = request.params;
     const cliente = carregarDados().clientes.find((c) => c.id === id);
-    if (!cliente) return naoEncontrado(`Cliente ${id} não encontrado`);
+    if (!cliente && !idGeradoNaSessao(id, 'c')) {
+      return naoEncontrado(`Cliente ${id} não encontrado`);
+    }
 
     const corpo = await lerCorpo(request);
     if (!corpo) return requisicaoInvalida('Envie um corpo JSON com tipo e observação');
@@ -34,7 +36,7 @@ app.http('interacoes-criar', {
       cor: CORES[tipo],
       obs: corpo.obs.trim(),
       data: corpo.data || new Date().toISOString().slice(0, 10),
-      autorId: corpo.autorId || cliente.responsavelId,
+      autorId: corpo.autorId || cliente?.responsavelId || null,
     });
   },
 });

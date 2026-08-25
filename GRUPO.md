@@ -1,4 +1,4 @@
-# Grupo — Mini CRM (PJBL)
+# Grupo  Mini CRM (PJBL)
 
 Projeto da disciplina de Soluções Cloud.
 
@@ -11,7 +11,7 @@ Projeto da disciplina de Soluções Cloud.
 
 ## Sistema
 
-**Mini CRM** — sistema web de gestão de relacionamento com clientes: cadastro de
+**Mini CRM:** sistema web de gestão de relacionamento com clientes: cadastro de
 clientes, registro de interações, funil de oportunidades de venda, tarefas com
 lembretes e dashboard de indicadores.
 

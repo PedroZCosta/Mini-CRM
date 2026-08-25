@@ -76,12 +76,13 @@ app.http('oportunidades-criar', {
     if (erros.length) return requisicaoInvalida('Oportunidade inválida', erros);
 
     const dados = carregarDados();
-    const cliente = dados.clientes.find((c) => c.id === corpo.clienteId);
+    /* Pode ser um cliente cadastrado nesta sessão, que a API não conhece. */
+    const cliente = dados.clientes.find((c) => c.id === corpo.clienteId) || null;
     const hoje = new Date().toISOString().slice(0, 10);
 
     const oportunidade = {
       id: novoId('o'),
-      clienteId: cliente.id,
+      clienteId: corpo.clienteId,
       titulo: corpo.titulo.trim(),
       etapa: corpo.etapa || 'Prospecção',
       resultado: null,
@@ -89,9 +90,10 @@ app.http('oportunidades-criar', {
       valor: Number(corpo.valor),
       dataPrevista: corpo.dataPrevista || hoje,
       atualizada: hoje,
-      responsavelId: corpo.responsavelId || cliente.responsavelId,
+      responsavelId: corpo.responsavelId || cliente?.responsavelId || null,
     };
-    return criado(enriquecer(oportunidade, new Map([[cliente.id, cliente]])));
+    const indice = cliente ? new Map([[cliente.id, cliente]]) : new Map();
+    return criado(enriquecer(oportunidade, indice));
   },
 });
 

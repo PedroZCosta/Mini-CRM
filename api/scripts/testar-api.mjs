@@ -297,6 +297,36 @@ await teste('PATCH de tarefa com status inválido responde 400', async () => {
   conferir(r.status === 400, `esperava 400, veio ${r.status}`);
 });
 
+await teste('interação em cliente cadastrado nesta sessão é aceita', async () => {
+  const novo = await chamar('POST', 'clientes', {
+    corpo: { nome: 'Mariana Duarte', empresa: 'Zenit Engenharia', email: 'mariana@zenit.com.br', responsavelId: 'u2' },
+  });
+  const r = await chamar('POST', 'clientes/{id}/interacoes', {
+    params: { id: novo.jsonBody.id },
+    corpo: { tipo: 'Ligação', obs: 'Primeira ligação com o cliente novo.', autorId: 'u2' },
+  });
+  conferir(r.status === 201, `esperava 201, veio ${r.status}`);
+  conferir(r.jsonBody.clienteId === novo.jsonBody.id, 'clienteId não preservado');
+});
+
+await teste('interação em cliente inexistente ainda responde 404', async () => {
+  const r = await chamar('POST', 'clientes/{id}/interacoes', {
+    params: { id: 'c999' },
+    corpo: { tipo: 'Ligação', obs: 'Não deveria passar.' },
+  });
+  conferir(r.status === 404, `esperava 404, veio ${r.status}`);
+});
+
+await teste('oportunidade para cliente cadastrado nesta sessão é aceita', async () => {
+  const novo = await chamar('POST', 'clientes', {
+    corpo: { nome: 'Cliente Novo', empresa: 'Nova Corp', email: 'novo@nova.com.br', responsavelId: 'u2' },
+  });
+  const r = await chamar('POST', 'oportunidades', {
+    corpo: { clienteId: novo.jsonBody.id, titulo: 'Contrato inicial', valor: 30000, responsavelId: 'u2' },
+  });
+  conferir(r.status === 201, `esperava 201, veio ${r.status}`);
+});
+
 await teste('POST sem corpo responde 400', async () => {
   const r = await chamar('POST', 'clientes');
   conferir(r.status === 400, `esperava 400, veio ${r.status}`);

@@ -1,0 +1,44 @@
+/*
+ * Ajustes do port para React.
+ *
+ * O base.css é cópia fiel do protótipo; o que precisa mudar por causa da
+ * estrutura de componentes fica aqui, separado, para a origem continuar clara.
+ */
+
+/*
+ * O rodapé da sidebar tem 172px. O texto de perfil precisa cortar com
+ * reticências em vez de vazar: o ellipsis só funciona em elemento de bloco.
+ */
+.nav-user .who span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A lista de erros de validação da API dentro dos avisos. */
+.warn-inline ul {
+  list-style: none;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* O textarea de observações herda a caixa do .input, mas precisa de altura. */
+textarea.input {
+  min-height: 92px;
+  resize: vertical;
+  padding: 9px 11px;
+  line-height: 1.45;
+}
+
+/*
+ * No protótipo as abas eram <a href="#">, que não tem borda nem fundo próprios.
+ * Aqui elas são <button>, que é o elemento correto para um controle que troca
+ * conteúdo na mesma página, então o reset visual vem para cá.
+ */
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+}

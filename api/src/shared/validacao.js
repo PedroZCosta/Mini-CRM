@@ -5,7 +5,9 @@
  * dos requisitos e devolvem o registro resultante, que o front-end guarda no
  * estado da aplicação. Erro de validação vira 400 com a lista de problemas.
  */
-import { ETAPAS, STATUS_CLIENTE, TIPOS_INTERACAO, MOTIVOS_PERDA, carregarDados } from './dados.js';
+import {
+  ETAPAS, STATUS_CLIENTE, TIPOS_INTERACAO, MOTIVOS_PERDA, carregarDados, idGeradoNaSessao,
+} from './dados.js';
 
 const texto = (v) => (typeof v === 'string' ? v.trim() : '');
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -49,7 +51,9 @@ export function validarInteracao(corpo) {
 export function validarOportunidade(corpo) {
   const erros = [];
   const { clientes } = carregarDados();
-  if (!clientes.some((c) => c.id === corpo.clienteId)) erros.push('clienteId: cliente inexistente');
+  const clienteExiste = clientes.some((c) => c.id === corpo.clienteId)
+    || idGeradoNaSessao(corpo.clienteId, 'c');
+  if (!clienteExiste) erros.push('clienteId: cliente inexistente');
   if (texto(corpo.titulo).length < 3) erros.push('titulo: informe ao menos 3 caracteres');
   if (!(Number(corpo.valor) > 0)) erros.push('valor: informe um valor estimado maior que zero');
   if (corpo.etapa !== undefined && !ETAPAS.includes(corpo.etapa)) {
