@@ -1,0 +1,668 @@
+openapi: 3.0.3
+info:
+  title: Mini CRM (PJBL) — API mock
+  version: "1.0.0"
+  description: |
+    API de dados mock do Mini CRM, implementada em Azure Functions (Node v4) e
+    publicada junto do front no Azure Static Web Apps, sob o caminho `/api`.
+
+    As funções são sem estado: as operações de escrita **validam** a entrada e
+    devolvem o registro resultante, mas não gravam em banco. O front-end guarda
+    o resultado em `localStorage`.
+
+    O parâmetro `usuarioId` define o escopo dos dados (RF15): Vendedor recebe a
+    própria carteira, Gerente a da equipe e Administrador o conjunto completo.
+
+    Este arquivo existe para importar a API no Apidog e gerar o mock a partir
+    dos mesmos contratos usados em produção.
+servers:
+  - url: https://ambitious-pebble-077133f10.7.azurestaticapps.net/api
+    description: Produção (Azure Static Web Apps)
+  - url: http://localhost:7071/api
+    description: Servidor local de desenvolvimento
+
+tags:
+  - name: Saúde
+  - name: Usuários
+  - name: Clientes
+  - name: Interações
+  - name: Oportunidades
+  - name: Tarefas
+  - name: Dashboard
+
+paths:
+  /health:
+    get:
+      tags: [Saúde]
+      summary: Estado da API e tamanho da massa mock
+      operationId: health
+      responses:
+        "200":
+          description: API no ar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  api: { type: string, example: "Mini CRM (PJBL) — dados mock" }
+                  referencia: { type: string, format: date, example: "2026-08-25" }
+                  registros:
+                    type: object
+                    properties:
+                      usuarios: { type: integer, example: 8 }
+                      clientes: { type: integer, example: 46 }
+                      interacoes: { type: integer, example: 123 }
+                      oportunidades: { type: integer, example: 60 }
+                      tarefas: { type: integer, example: 22 }
+
+  /usuarios:
+    get:
+      tags: [Usuários]
+      summary: Usuários do sistema, sem credenciais
+      operationId: listarUsuarios
+      responses:
+        "200":
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens:
+                    type: array
+                    items: { $ref: "#/components/schemas/Usuario" }
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Indicadores, funil resumido, tarefas e ranking
+      operationId: dashboard
+      parameters:
+        - $ref: "#/components/parameters/UsuarioId"
+      responses:
+        "200":
+          description: Indicadores no escopo do usuário
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RespostaDashboard" }
+
+  /clientes:
+    get:
+      tags: [Clientes]
+      summary: Lista de clientes com busca, filtros e paginação
+      operationId: listarClientes
+      parameters:
+        - $ref: "#/components/parameters/UsuarioId"
+        - name: q
+          in: query
+          description: Busca por nome, empresa ou e-mail
+          schema: { type: string, example: acme }
+        - name: status
+          in: query
+          schema: { type: string, enum: [Todos, Prospect, Ativo, Inativo] }
+        - name: responsavelId
+          in: query
+          schema: { type: string, example: u2 }
+        - name: pagina
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+      responses:
+        "200":
+          description: Página de clientes (20 por página)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RespostaClientes" }
+    post:
+      tags: [Clientes]
+      summary: Cadastra cliente (nasce como Prospect)
+      operationId: criarCliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClienteEntrada" }
+      responses:
+        "201":
+          description: Cliente validado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Cliente" }
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /clientes/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ClienteIdPath"
+    get:
+      tags: [Clientes]
+      summary: Cliente com interações, oportunidades e tarefas
+      operationId: detalharCliente
+      parameters:
+        - $ref: "#/components/parameters/UsuarioId"
+      responses:
+        "200":
+          description: Detalhe do cliente
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RespostaClienteDetalhe" }
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+    patch:
+      tags: [Clientes]
+      summary: Altera campos do cliente
+      operationId: atualizarCliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClienteEntradaParcial" }
+      responses:
+        "200":
+          description: Cliente atualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Cliente" }
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+    delete:
+      tags: [Clientes]
+      summary: Exclusão lógica (passa a Inativo e sai das listagens)
+      operationId: excluirCliente
+      responses:
+        "200":
+          description: Cliente marcado como excluído
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Cliente" }
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+
+  /clientes/{id}/interacoes:
+    post:
+      tags: [Interações]
+      summary: Registra ligação, e-mail ou reunião
+      operationId: criarInteracao
+      parameters:
+        - $ref: "#/components/parameters/ClienteIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipo, obs]
+              properties:
+                tipo: { type: string, enum: [Ligação, E-mail, Reunião] }
+                obs:
+                  type: string
+                  minLength: 3
+                  example: Cliente pediu proposta revisada até sexta.
+                usuarioId: { type: string, example: u1 }
+      responses:
+        "201":
+          description: Interação validada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Interacao" }
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+
+  /oportunidades:
+    get:
+      tags: [Oportunidades]
+      summary: Funil agrupado nas quatro etapas, com contagem e soma
+      operationId: listarOportunidades
+      parameters:
+        - $ref: "#/components/parameters/UsuarioId"
+      responses:
+        "200":
+          description: Funil no escopo do usuário
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RespostaFunil" }
+    post:
+      tags: [Oportunidades]
+      summary: Cria oportunidade vinculada a um cliente
+      operationId: criarOportunidade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [clienteId, titulo, valor]
+              properties:
+                clienteId: { type: string, example: c19 }
+                titulo: { type: string, minLength: 3, example: Renovação anual }
+                valor: { type: number, minimum: 0, example: 120000 }
+                etapa: { $ref: "#/components/schemas/Etapa" }
+                dataPrevista: { type: string, format: date, example: "2026-10-24" }
+                usuarioId: { type: string, example: u1 }
+      responses:
+        "201":
+          description: Oportunidade validada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Oportunidade" }
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /oportunidades/{id}:
+    patch:
+      tags: [Oportunidades]
+      summary: Move no funil, fecha ou reabre
+      description: |
+        RF09: sair da etapa `Fechado` exige `reabrir: true`.
+        RF29: fechar com `resultado: perdido` exige `motivoPerda`.
+      operationId: moverOportunidade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, example: o_dk77pt }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [etapa]
+              properties:
+                etapa: { $ref: "#/components/schemas/Etapa" }
+                resultado:
+                  type: string
+                  nullable: true
+                  enum: [ganho, perdido, null]
+                motivoPerda: { $ref: "#/components/schemas/MotivoPerda" }
+                reabrir:
+                  type: boolean
+                  description: Obrigatório para tirar a oportunidade de "Fechado"
+                usuarioId: { type: string, example: u1 }
+            examples:
+              avancar:
+                summary: Avança para Proposta
+                value: { etapa: Proposta }
+              perder:
+                summary: Fecha como perdida (RF29)
+                value: { etapa: Fechado, resultado: perdido, motivoPerda: Preço }
+              reabrir:
+                summary: Reabre uma oportunidade fechada (RF09)
+                value: { etapa: Contato, reabrir: true }
+      responses:
+        "200":
+          description: Oportunidade movida, com o funil recalculado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  oportunidade: { $ref: "#/components/schemas/Oportunidade" }
+                  etapas:
+                    type: array
+                    items: { $ref: "#/components/schemas/EtapaFunil" }
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+
+  /tarefas:
+    get:
+      tags: [Tarefas]
+      summary: Tarefas com faixa de vencimento calculada
+      operationId: listarTarefas
+      parameters:
+        - $ref: "#/components/parameters/UsuarioId"
+        - name: status
+          in: query
+          schema: { type: string, enum: [pendente, concluida] }
+      responses:
+        "200":
+          description: Tarefas no escopo do usuário
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RespostaTarefas" }
+
+  /tarefas/{id}:
+    patch:
+      tags: [Tarefas]
+      summary: Conclui ou reabre a tarefa
+      operationId: atualizarTarefa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, example: t_4dtnzk }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [pendente, concluida] }
+      responses:
+        "200":
+          description: Tarefa atualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tarefa" }
+        "400":
+          $ref: "#/components/responses/ErroValidacao"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+
+components:
+  parameters:
+    UsuarioId:
+      name: usuarioId
+      in: query
+      description: Define o escopo dos dados (RF15). Ausente, assume o Administrador.
+      schema: { type: string, example: u1 }
+    ClienteIdPath:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, example: c19 }
+
+  responses:
+    ErroValidacao:
+      description: Entrada inválida
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Erro" }
+          example:
+            erro: Cliente inválido
+            erros:
+              - "nome: informe ao menos 3 caracteres"
+              - "email: formato inválido"
+    NaoEncontrado:
+      description: Registro inexistente ou fora do escopo do usuário
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Erro" }
+          example: { erro: Cliente não encontrado }
+
+  schemas:
+    Erro:
+      type: object
+      properties:
+        erro: { type: string }
+        erros:
+          type: array
+          items: { type: string }
+
+    Perfil:
+      type: string
+      enum: [Admin, Gerente, Vendedor]
+    StatusCliente:
+      type: string
+      enum: [Prospect, Ativo, Inativo]
+    Etapa:
+      type: string
+      enum: [Prospecção, Contato, Proposta, Fechado]
+    MotivoPerda:
+      type: string
+      nullable: true
+      enum: [Preço, Concorrente, Sem verba, Sem resposta, null]
+    FaixaVencimento:
+      type: string
+      nullable: true
+      enum: [vencida, hoje, amanha, quinze, null]
+
+    Usuario:
+      type: object
+      properties:
+        id: { type: string, example: u1 }
+        nome: { type: string, example: Ana Costa }
+        email: { type: string, format: email, example: ana@empresa.com }
+        perfil: { $ref: "#/components/schemas/Perfil" }
+        status: { type: string, enum: [Ativo, Desativado] }
+        gerenteId: { type: string, nullable: true }
+        modoVisualizacao: { type: string, enum: [Total, Equipe, Individual] }
+        seed: { type: boolean }
+
+    Cliente:
+      type: object
+      properties:
+        id: { type: string, example: c19 }
+        nome: { type: string, example: Ana Zanetti }
+        empresa: { type: string, example: Bluepine Consultoria }
+        email: { type: string, format: email, example: ana@bluepineco.com.br }
+        telefone: { type: string, example: "(24) 93545-7557" }
+        status: { $ref: "#/components/schemas/StatusCliente" }
+        responsavelId: { type: string, example: u7 }
+        excluido: { type: boolean, example: false }
+        responsavelNome: { type: string, example: Ana Costa }
+        semResponsavelAtivo:
+          type: boolean
+          description: RF33, responsável desativado; o registro fica visível e sinalizado
+
+    ClienteEntrada:
+      type: object
+      required: [nome, empresa, email, telefone, responsavelId]
+      properties:
+        nome: { type: string, minLength: 3, example: Cliente Teste }
+        empresa: { type: string, minLength: 2, example: ACME Ltda }
+        email: { type: string, format: email, example: teste@exemplo.com }
+        telefone: { type: string, example: "(41) 99999-0000" }
+        responsavelId: { type: string, example: u1 }
+        status: { $ref: "#/components/schemas/StatusCliente" }
+
+    ClienteEntradaParcial:
+      type: object
+      description: Campos opcionais; apenas os enviados são validados
+      properties:
+        nome: { type: string, minLength: 3 }
+        empresa: { type: string, minLength: 2 }
+        email: { type: string, format: email }
+        telefone: { type: string }
+        responsavelId: { type: string }
+        status: { $ref: "#/components/schemas/StatusCliente" }
+
+    Interacao:
+      type: object
+      properties:
+        id: { type: string, example: i_2vwx4a }
+        clienteId: { type: string, example: c19 }
+        tipo: { type: string, enum: [Ligação, E-mail, Reunião] }
+        icon: { type: string, enum: [phone, mail, meeting] }
+        cor: { type: string, enum: [signal, violet, amber] }
+        obs: { type: string, example: Cliente pediu proposta revisada. }
+        data: { type: string, format: date, example: "2026-08-25" }
+        autorId: { type: string, example: u7 }
+
+    Oportunidade:
+      type: object
+      properties:
+        id: { type: string, example: o_dk77pt }
+        clienteId: { type: string, example: c19 }
+        titulo: { type: string, example: Expansão de equipe }
+        etapa: { $ref: "#/components/schemas/Etapa" }
+        resultado:
+          type: string
+          nullable: true
+          enum: [ganho, perdido, null]
+        motivoPerda: { $ref: "#/components/schemas/MotivoPerda" }
+        valor: { type: number, example: 108000 }
+        dataPrevista: { type: string, format: date, example: "2026-10-24" }
+        atualizada: { type: string, format: date, example: "2026-08-25" }
+        responsavelId: { type: string, example: u7 }
+        clienteNome: { type: string }
+        clienteEmpresa: { type: string }
+        responsavelNome: { type: string }
+        semResponsavelAtivo: { type: boolean }
+
+    Tarefa:
+      type: object
+      properties:
+        id: { type: string, example: t_4dtnzk }
+        titulo: { type: string, example: Enviar proposta de renovação }
+        clienteId: { type: string, example: c12 }
+        vinculoTipo: { type: string, enum: [cliente, oportunidade] }
+        vinculoLabel: { type: string, example: Cedro Alimentos }
+        vinculoOppId: { type: string, nullable: true }
+        vencimento: { type: string, format: date, example: "2026-08-27" }
+        responsavelId: { type: string, example: u5 }
+        status: { type: string, enum: [pendente, concluida] }
+        faixa: { $ref: "#/components/schemas/FaixaVencimento" }
+        clienteNome: { type: string }
+
+    Paginacao:
+      type: object
+      properties:
+        pagina: { type: integer, example: 1 }
+        porPagina: { type: integer, example: 20 }
+        total: { type: integer, example: 46 }
+        totalPaginas: { type: integer, example: 3 }
+
+    RespostaClientes:
+      type: object
+      properties:
+        itens:
+          type: array
+          items: { $ref: "#/components/schemas/Cliente" }
+        paginacao: { $ref: "#/components/schemas/Paginacao" }
+        filtros:
+          type: object
+          properties:
+            q: { type: string }
+            status: { type: string }
+            responsavelId: { type: string }
+        escopo:
+          type: object
+          properties:
+            usuarioId: { type: string }
+            perfil: { $ref: "#/components/schemas/Perfil" }
+            responsaveis:
+              type: array
+              items: { type: string }
+
+    RespostaClienteDetalhe:
+      type: object
+      properties:
+        cliente: { $ref: "#/components/schemas/Cliente" }
+        interacoes:
+          type: array
+          items: { $ref: "#/components/schemas/Interacao" }
+        oportunidades:
+          type: array
+          items: { $ref: "#/components/schemas/Oportunidade" }
+        tarefas:
+          type: array
+          items: { $ref: "#/components/schemas/Tarefa" }
+
+    EtapaFunil:
+      type: object
+      properties:
+        etapa: { $ref: "#/components/schemas/Etapa" }
+        quantidade: { type: integer, example: 8 }
+        valorTotal: { type: number, example: 455000 }
+        ganhas: { type: integer, example: 0 }
+        perdidas: { type: integer, example: 0 }
+        itens:
+          type: array
+          items: { $ref: "#/components/schemas/Oportunidade" }
+
+    RespostaFunil:
+      type: object
+      properties:
+        etapas:
+          type: array
+          items: { $ref: "#/components/schemas/EtapaFunil" }
+        total: { type: integer, example: 60 }
+        valorEmNegociacao: { type: number, example: 2582000 }
+        escopo:
+          type: object
+          properties:
+            usuarioId: { type: string }
+            perfil: { $ref: "#/components/schemas/Perfil" }
+
+    RespostaTarefas:
+      type: object
+      properties:
+        itens:
+          type: array
+          items: { $ref: "#/components/schemas/Tarefa" }
+        total: { type: integer, example: 22 }
+        resumo:
+          type: object
+          properties:
+            pendentes: { type: integer, example: 18 }
+            concluidas: { type: integer, example: 4 }
+            vencidas: { type: integer, example: 5 }
+            hoje: { type: integer, example: 2 }
+            amanha: { type: integer, example: 4 }
+            proximos15Dias: { type: integer, example: 5 }
+
+    ItemRanking:
+      type: object
+      properties:
+        usuarioId: { type: string, example: u2 }
+        nome: { type: string, example: Bruno Lima }
+        perfil: { type: string, example: Vendedor }
+        ativo: { type: boolean, example: true }
+        valorGanho: { type: number, example: 231000 }
+        oportunidadesGanhas: { type: integer, example: 3 }
+        oportunidadesPerdidas: { type: integer, example: 1 }
+
+    RespostaDashboard:
+      type: object
+      properties:
+        escopo:
+          type: object
+          properties:
+            usuarioId: { type: string, example: u3 }
+            nome: { type: string, example: Rui Alves }
+            perfil: { $ref: "#/components/schemas/Perfil" }
+            modoVisualizacao: { type: string, example: Total }
+            responsaveis:
+              type: array
+              items: { type: string }
+        clientes:
+          type: object
+          properties:
+            total: { type: integer, example: 46 }
+            porStatus:
+              type: object
+              properties:
+                Prospect: { type: integer, example: 29 }
+                Ativo: { type: integer, example: 11 }
+                Inativo: { type: integer, example: 6 }
+        oportunidades:
+          type: object
+          properties:
+            total: { type: integer, example: 60 }
+            valorEmNegociacao: { type: number, example: 2582000 }
+            valorGanho: { type: number, example: 803000 }
+            ganhas: { type: integer, example: 9 }
+            perdidas: { type: integer, example: 7 }
+            porEtapa:
+              type: array
+              items:
+                type: object
+                properties:
+                  etapa: { $ref: "#/components/schemas/Etapa" }
+                  quantidade: { type: integer }
+                  valorTotal: { type: number }
+            motivosPerda:
+              type: object
+              additionalProperties: { type: integer }
+        tarefas:
+          type: object
+          properties:
+            total: { type: integer, example: 22 }
+            pendentes: { type: integer, example: 18 }
+            concluidas: { type: integer, example: 4 }
+            vencidas: { type: integer, example: 5 }
+            hoje: { type: integer, example: 2 }
+            amanha: { type: integer, example: 4 }
+            proximos15Dias: { type: integer, example: 5 }
+        ranking:
+          type: array
+          items: { $ref: "#/components/schemas/ItemRanking" }

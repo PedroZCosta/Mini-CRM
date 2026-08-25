@@ -132,6 +132,7 @@ export interface ItemRanking {
   ativo: boolean;
   valorGanho: number;
   oportunidadesGanhas: number;
+  oportunidadesPerdidas: number;
 }
 
 export interface RespostaDashboard {

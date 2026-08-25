@@ -7,7 +7,7 @@ import { BadgeFaixa } from '../componentes/Badge';
 import { Carregando, ErroCaixa, Vazio } from '../componentes/Estados';
 import { Icone } from '../componentes/Icone';
 import type { RespostaDashboard, RespostaTarefas } from '../tipos';
-import { dataCurta, moeda, moedaCurta } from '../util/formato';
+import { dataCurta, moedaCurta } from '../util/formato';
 
 /** Cores das etapas, iguais às do protótipo. */
 const COR_ETAPA: Record<string, string> = {
@@ -196,7 +196,7 @@ export function Dashboard() {
 
         {/* RF31 — ranking por valor ganho. O Vendedor não recebe esta lista da API. */}
         {d.ranking.length > 0 ? (
-          <div className="card panel">
+          <div className="card panel rank-compacto">
             <div className="panel-head">
               <div>
                 <h3>Ranking por valor ganho</h3>
@@ -219,8 +219,8 @@ export function Dashboard() {
                   <i style={{ width: `${(r.valorGanho / maiorGanho) * 100}%` }} />
                 </div>
                 <div className="rank-vl">
-                  <b>{moeda(r.valorGanho)}</b>
-                  <span>{r.oportunidadesGanhas} oportunidade(s) ganha(s)</span>
+                  <b>{moedaCurta(r.valorGanho)}</b>
+                  <span>{r.oportunidadesGanhas} ganha(s) · {r.oportunidadesPerdidas} perdida(s)</span>
                 </div>
               </div>
             ))}

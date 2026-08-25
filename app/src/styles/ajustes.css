@@ -42,3 +42,10 @@ textarea.input {
   border: none;
   border-bottom: 3px solid transparent;
 }
+
+/* O protótipo mostra o ranking numa página de largura cheia (1180px), com o nome
+   em 225px fixos. Aqui ele vive num painel do dashboard (~500px), onde essas
+   larguras fixas somadas estouram a linha. Nesta coluna o nome passa a flexível
+   e a barra ganha largura fixa menor. */
+.rank-compacto .rank-nm { width: auto; flex: 1; }
+.rank-compacto .rank-bar { flex: none; width: 62px; }

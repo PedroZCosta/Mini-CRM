@@ -33,6 +33,7 @@ app.http('dashboard', {
       .map((id) => {
         const u = usuarios.find((x) => x.id === id);
         const minhas = ganhas.filter((o) => o.responsavelId === id);
+        const minhasPerdidas = perdidas.filter((o) => o.responsavelId === id);
         return {
           usuarioId: id,
           nome: u ? u.nome : 'Sem responsável',
@@ -40,6 +41,7 @@ app.http('dashboard', {
           ativo: u ? u.status === 'Ativo' : false,
           valorGanho: minhas.reduce((soma, o) => soma + o.valor, 0),
           oportunidadesGanhas: minhas.length,
+          oportunidadesPerdidas: minhasPerdidas.length,
         };
       })
       .filter((r) => r.oportunidadesGanhas > 0 || r.perfil === 'Vendedor')
