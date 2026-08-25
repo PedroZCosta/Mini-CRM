@@ -17,7 +17,7 @@ identidade visual vem do protótipo validado pela equipe.
 |---|---|
 | Site (Azure Static Web Apps) | <https://ambitious-pebble-077133f10.7.azurestaticapps.net> |
 | API (Azure Functions integrada) | <https://ambitious-pebble-077133f10.7.azurestaticapps.net/api/health> (mesma origem do site, sob `/api`) |
-| Mock no Apidog | _a preencher após publicar o projeto no Apidog_ |
+| Documentação no Apidog | <https://rydx0vewxp.apidog.io> |
 
 ## Telas
 
@@ -109,16 +109,17 @@ protótipo. A senha de todos é `demo1234`.
 ## Mock no Apidog
 
 A especificação OpenAPI das 14 rotas está em [`docs/openapi.yaml`](docs/openapi.yaml),
-com os mesmos contratos que a API publicada devolve. Para gerar o mock:
+com os mesmos contratos que as Azure Functions devolvem. Ela foi importada no Apidog
+(**Import → OpenAPI/Swagger**), que criou os endpoints, gerou o Cloud Mock a partir
+dos schemas e publicou a documentação em <https://rydx0vewxp.apidog.io>.
 
-1. No Apidog, **New Project → Import → OpenAPI/Swagger** e escolha `docs/openapi.yaml`.
-2. O Apidog cria os endpoints e monta o **Cloud Mock** a partir dos schemas, sem
-   configuração extra.
-3. Em **Share Docs**, publique a documentação e copie os dois endereços (documentação
-   e servidor de mock) para a tabela de Endereços deste README.
+O endereço do servidor de mock fica em **Environment → Cloud Mock** dentro do projeto
+no Apidog, no formato `https://mock.apidog.com/m1/<projeto>`. Para apontar o
+front-end a ele em vez das Azure Functions, basta definir a variável `VITE_API_URL`
+com essa URL antes do build.
 
-Para apontar o front-end ao mock do Apidog em vez das Azure Functions, basta definir
-a variável `VITE_API_URL` com a URL do mock antes do build.
+Quando o `docs/openapi.yaml` mudar, reimporte o arquivo no mesmo projeto para manter
+a documentação e o mock alinhados com a API.
 
 ## Rodando localmente
 
