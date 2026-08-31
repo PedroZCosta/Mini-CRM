@@ -127,9 +127,13 @@ Para apontar o front-end a ele em vez das Azure Functions, basta definir a vari�
 `VITE_API_URL` com essa URL antes do build.
 
 Cada resposta de sucesso do `openapi.yaml` carrega um **exemplo capturado da própria
-API**, e não um valor inventado. Com a opção **Response Example First** ligada em
-Mock Settings, o Cloud Mock devolve esses exemplos em vez de gerar dados aleatórios
-a partir dos tipos, então o mock e as Azure Functions respondem a mesma coisa.
+API**, e não um valor inventado. Esses mesmos exemplos foram gravados no Apidog como
+*mock expectations*, uma por rota, de modo que o Cloud Mock devolve os dados reais do
+CRM em vez de valores gerados a partir dos tipos. O projeto também está configurado
+com **Response Example First** em Mock Settings.
+
+O mock devolve sempre a mesma resposta por rota: ele não interpreta `usuarioId` nem
+os filtros, que são aplicados apenas pelas Azure Functions.
 
 Quando o `docs/openapi.yaml` mudar, reimporte o arquivo no mesmo projeto para manter
 a documentação e o mock alinhados com a API.
