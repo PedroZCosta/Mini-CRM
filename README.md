@@ -1,27 +1,35 @@
-# Mini CRM (PJBL) — Soluções Cloud
+# Mini CRM (PJBL)
 
-Front-end em React que consome uma API de Azure Functions com dados mock, publicado
-no Azure Static Web Apps. Projeto da disciplina de Soluções Cloud.
+Projeto da disciplina de Soluções Cloud. É um CRM enxuto, com carteira de clientes,
+histórico de interações, funil de oportunidades, tarefas com aviso de vencimento e
+indicadores que mudam conforme o perfil de quem está logado.
 
-O sistema é um CRM simples: carteira de clientes, histórico de interações, funil de
-oportunidades de venda, tarefas com faixas de vencimento e indicadores por perfil de
-usuário. Os requisitos vêm da especificação do grupo (33 requisitos funcionais) e a
-identidade visual vem do protótipo validado pela equipe.
+O front-end é React e conversa com uma API de Azure Functions que serve dados mock.
+Tudo está publicado no Azure Static Web Apps. Os requisitos saíram do levantamento
+que o grupo fez (33 requisitos funcionais) e a aparência veio do protótipo em HTML
+que a equipe validou antes de começar a programar.
 
-- **Integrantes:** ver [GRUPO.md](GRUPO.md)
-- **Especificação do sistema:** ver [docs/SPEC.md](docs/SPEC.md)
-- **Prompts usados na geração:** ver [PROMPT.MD](PROMPT.MD)
+- **Quem fez:** [GRUPO.md](GRUPO.md)
+- **O que o sistema faz, em detalhe:** [docs/SPEC.md](docs/SPEC.md)
+- **Como a IA foi usada:** [PROMPT.MD](PROMPT.MD)
 
 ## Endereços
 
 | O quê | Endereço |
 |---|---|
 | Site (Azure Static Web Apps) | <https://ambitious-pebble-077133f10.7.azurestaticapps.net> |
-| API (Azure Functions integrada) | <https://ambitious-pebble-077133f10.7.azurestaticapps.net/api/health> (mesma origem do site, sob `/api`) |
+| API (Azure Functions integrada) | <https://ambitious-pebble-077133f10.7.azurestaticapps.net/api/health> |
 | Documentação no Apidog | <https://rydx0vewxp.apidog.io> |
 | Mock server no Apidog (Cloud Mock) | <https://mock.apidog.com/m1/1365834-1370078-default> |
 
+A API não tem domínio próprio: ela vive sob `/api`, no mesmo endereço do site. É o
+recurso de API integrada do Static Web Apps, e a vantagem é não precisar lidar com
+CORS nem com duas URLs diferentes.
+
 ## Telas
+
+O enunciado pede duas telas no mínimo. Fizemos cinco, porque com menos que isso o
+fluxo do CRM não fecha.
 
 | Tela | Requisitos atendidos |
 |---|---|
@@ -33,42 +41,42 @@ identidade visual vem do protótipo validado pela equipe.
 
 ## Endpoints da API
 
-Todos anônimos, sob `/api`. O parâmetro `usuarioId` define o escopo dos dados
-(RF15): o Vendedor recebe apenas a própria carteira, o Gerente a da equipe e o
-Administrador o conjunto completo.
+São 14 rotas, todas anônimas, sob `/api`. Quem manda no que aparece é o parâmetro
+`usuarioId`: o Vendedor recebe só a própria carteira, o Gerente recebe a da equipe e
+o Administrador recebe tudo. Essa é a regra do RF15.
 
-| Método | Rota | Descrição |
+| Método | Rota | O que faz |
 |---|---|---|
-| GET | `/api/health` | Estado da API e tamanho da massa mock |
-| GET | `/api/usuarios` | Usuários do sistema, sem credenciais |
+| GET | `/api/health` | Diz se a API está de pé e quantos registros existem |
+| GET | `/api/usuarios` | Lista os usuários, sem nenhum dado de senha |
 | GET | `/api/dashboard` | Indicadores, funil resumido, tarefas e ranking |
-| GET | `/api/clientes` | Lista com busca (`q`), filtros (`status`, `responsavelId`) e paginação de 20 |
-| GET | `/api/clientes/{id}` | Cliente com interações, oportunidades e tarefas |
-| POST | `/api/clientes` | Cadastra cliente (nasce como Prospect) |
+| GET | `/api/clientes` | Lista com busca (`q`), filtros (`status`, `responsavelId`) e 20 por página |
+| GET | `/api/clientes/{id}` | O cliente com suas interações, oportunidades e tarefas |
+| POST | `/api/clientes` | Cadastra um cliente, que nasce como Prospect |
 | PATCH | `/api/clientes/{id}` | Altera campos do cliente |
-| DELETE | `/api/clientes/{id}` | Exclusão lógica: passa a Inativo e sai das listagens |
-| POST | `/api/clientes/{id}/interacoes` | Registra ligação, e-mail ou reunião |
-| GET | `/api/oportunidades` | Funil agrupado nas quatro etapas, com contagem e soma |
+| DELETE | `/api/clientes/{id}` | Exclusão lógica: vira Inativo e some das listagens |
+| POST | `/api/clientes/{id}/interacoes` | Registra uma ligação, e-mail ou reunião |
+| GET | `/api/oportunidades` | O funil nas quatro etapas, com contagem e soma |
 | POST | `/api/oportunidades` | Cria oportunidade vinculada a um cliente |
 | PATCH | `/api/oportunidades/{id}` | Move no funil, fecha ou reabre |
-| GET | `/api/tarefas` | Tarefas com faixa de vencimento calculada |
+| GET | `/api/tarefas` | Tarefas com a faixa de vencimento já calculada |
 | PATCH | `/api/tarefas/{id}` | Conclui ou reabre a tarefa |
 
-Exemplos:
+Dá para testar direto no navegador ou no terminal:
 
 ```bash
 curl "https://ambitious-pebble-077133f10.7.azurestaticapps.net/api/clientes?usuarioId=u2&q=acme&status=Ativo"
 curl "https://ambitious-pebble-077133f10.7.azurestaticapps.net/api/dashboard?usuarioId=u1"
 ```
 
-### Sobre a persistência
+### Por que nada é gravado em banco
 
-As Azure Functions **validam** as operações de escrita e devolvem o registro
-resultante, mas não gravam em banco: são funções sem estado servindo dados mock,
-como pede o enunciado. Quem guarda o resultado é o front-end.
+Azure Functions não guarda estado e este projeto não tem banco de dados. Então as
+operações de escrita **validam** o que chega, aplicam as regras de negócio e
+devolvem o registro pronto. Quem guarda o resultado é o front-end.
 
-Na prática isso significa que a validação é real. Cadastrar um cliente com e-mail
-inválido devolve `400` com a lista de problemas:
+Isso não deixa a validação de enfeite. Tente cadastrar um cliente com e-mail
+inválido e a resposta é `400` com a lista inteira de problemas, não só o primeiro:
 
 ```json
 {
@@ -77,70 +85,76 @@ inválido devolve `400` com a lista de problemas:
 }
 ```
 
-E as regras de negócio também: fechar uma oportunidade como perdida sem informar o
-motivo devolve `400` (RF29), e tirar do funil uma oportunidade já fechada exige
-`reabrir: true` no corpo (RF09).
+As regras de negócio valem do mesmo jeito. Fechar uma oportunidade como perdida sem
+dizer o motivo é recusado (RF29), e tirar do funil uma oportunidade já fechada exige
+mandar `reabrir: true` no corpo (RF09).
 
-## Dados mock
+## Os dados fictícios
 
-A massa é gerada por `api/scripts/gerar-mock.mjs` com semente fixa, então é sempre
-idêntica: 8 usuários, 46 clientes, 60 oportunidades, 123 interações e 22 tarefas.
+A massa vem do script `api/scripts/gerar-mock.mjs`, que usa uma semente fixa. Por
+isso ela é sempre a mesma: 8 usuários, 46 clientes, 60 oportunidades, 123 interações
+e 22 tarefas.
 
-As datas são gravadas como **deslocamento em dias**, não como data absoluta, e a API
-converte para data real no momento da requisição. Assim as faixas de vencimento do
-RF13 (vencida, hoje, amanhã, próximos 15 dias) continuam corretas em qualquer data
-de execução, sem regerar nada.
+Tem um detalhe do qual gostamos: as datas não são gravadas como data absoluta, e sim
+como **deslocamento em dias**. A API converte para data real na hora da requisição.
+O efeito é que as faixas de vencimento do RF13 (vencida, hoje, amanhã, próximos 15
+dias) continuam certas em qualquer dia que alguém abrir o sistema, sem ninguém
+precisar regerar nada.
 
-Para regerar:
+Se quiser regerar mesmo assim:
 
 ```bash
 cd api && node scripts/gerar-mock.mjs
 ```
 
-## Usuários de demonstração
+## Usuários para testar
 
-A autenticação é simulada no front-end: não há back-end de autenticação neste
+O login é simulado no front, já que não existe back-end de autenticação neste
 protótipo. A senha de todos é `demo1234`.
 
 | E-mail | Perfil | O que enxerga |
 |---|---|---|
 | `rui@empresa.com` | Administrador | Todos os dados e o ranking geral |
 | `ana@empresa.com` | Gerente de Vendas | A própria carteira e a dos seus vendedores |
-| `pedro@empresa.com` | Vendedor | Apenas a própria carteira, sem ranking |
+| `pedro@empresa.com` | Vendedor | Só a própria carteira, sem ranking |
 
-## Mock no Apidog
+Vale entrar com os três para ver a diferença: o perfil de Administrador vê 46
+clientes, o de Gerente vê 28 e o de Vendedor vê 10.
 
-O contrato OpenAPI das 14 rotas está em [`docs/openapi.yaml`](docs/openapi.yaml),
-com os mesmos contratos que as Azure Functions devolvem. Ela foi importada no Apidog
-(**Import → OpenAPI/Swagger**), que criou os endpoints, gerou o Cloud Mock a partir
-dos schemas e publicou a documentação em <https://rydx0vewxp.apidog.io>.
+## O mock no Apidog
 
-O servidor de mock (Cloud Mock) responde em
-<https://mock.apidog.com/m1/1365834-1370078-default>, com os mesmos caminhos da API:
+O contrato das 14 rotas está em [`docs/openapi.yaml`](docs/openapi.yaml), com os
+mesmos formatos que as Azure Functions devolvem. Esse arquivo foi importado no
+Apidog (**Import → OpenAPI/Swagger**), que criou os endpoints, gerou o Cloud Mock e
+publicou a documentação em <https://rydx0vewxp.apidog.io>.
+
+O mock atende no mesmo caminho da API:
 
 ```bash
 curl https://mock.apidog.com/m1/1365834-1370078-default/health
 curl https://mock.apidog.com/m1/1365834-1370078-default/clientes
 ```
 
-Para apontar o front-end a ele em vez das Azure Functions, basta definir a variável
-`VITE_API_URL` com essa URL antes do build.
+Cada resposta de sucesso do `openapi.yaml` carrega um exemplo que foi **capturado da
+API rodando**, não um valor inventado. Esses mesmos exemplos estão gravados no
+Apidog como mock expectations, uma por rota, então o mock devolve os dados de
+verdade do CRM em vez daquele lorem ipsum que ele gera sozinho a partir dos tipos.
+O projeto também está com Response Example First ligado em Mock Settings.
 
-Cada resposta de sucesso do `openapi.yaml` carrega um **exemplo capturado da própria
-API**, e não um valor inventado. Esses mesmos exemplos foram gravados no Apidog como
-*mock expectations*, uma por rota, de modo que o Cloud Mock devolve os dados reais do
-CRM em vez de valores gerados a partir dos tipos. O projeto também está configurado
-com **Response Example First** em Mock Settings.
+Duas ressalvas para não gerar confusão:
 
-O mock devolve sempre a mesma resposta por rota: ele não interpreta `usuarioId` nem
-os filtros, que são aplicados apenas pelas Azure Functions.
+- O mock devolve sempre a mesma resposta por rota. Ele não lê `usuarioId` nem os
+  filtros, que só funcionam nas Azure Functions.
+- Reimportar o `openapi.yaml` atualiza a documentação e os endpoints, mas não mexe
+  nas mock expectations. Se o formato de alguma resposta mudar, a expectation
+  daquela rota precisa ser atualizada à parte.
 
-Quando o `docs/openapi.yaml` mudar, reimporte o arquivo no mesmo projeto para manter
-a documentação e o mock alinhados com a API.
+Para o front-end usar o mock no lugar das Functions, é só definir a variável
+`VITE_API_URL` com a URL do mock antes de rodar o build.
 
-## Rodando localmente
+## Rodando na sua máquina
 
-Requer Node.js 22 ou superior.
+Precisa de Node.js 22 ou mais novo.
 
 ```bash
 # instala as dependências
@@ -154,12 +168,13 @@ node api/scripts/servidor-local.mjs
 npm run dev --prefix app
 ```
 
-O Vite faz proxy de `/api` para a porta 7071, então o front usa o mesmo caminho
-relativo em desenvolvimento e em produção.
+O Vite faz proxy de `/api` para a porta 7071, então o caminho que o front usa é o
+mesmo em desenvolvimento e em produção.
 
-O script `api/scripts/servidor-local.mjs` registra os mesmos handlers que rodam na
-nuvem e os serve por HTTP, o que dispensa o Azure Functions Core Tools. Com o
-`func` instalado, `cd api && func start` também funciona.
+Sobre o `servidor-local.mjs`: ele registra os mesmos handlers que rodam na nuvem e
+os serve por HTTP. Escrevemos esse script porque a instalação do Azure Functions
+Core Tools falhava no ambiente do grupo. Se você tiver o `func` instalado,
+`cd api && func start` funciona igual.
 
 ## Testes
 
@@ -167,11 +182,11 @@ nuvem e os serve por HTTP, o que dispensa o Azure Functions Core Tools. Com o
 node api/scripts/testar-api.mjs
 ```
 
-São 29 casos cobrindo o escopo por perfil, a paginação, os filtros, as validações e
-as regras de negócio dos requisitos. Também há `npm run lint --prefix app` e
-`npm run build --prefix app`.
+São 29 casos, cobrindo o escopo por perfil, a paginação, os filtros, as validações
+de cada entidade e as regras de negócio dos requisitos. O front tem ainda
+`npm run lint --prefix app` e `npm run build --prefix app`.
 
-## Estrutura
+## Como o projeto está organizado
 
 ```
 Mini-CRM/
@@ -185,7 +200,7 @@ Mini-CRM/
 │       ├── estado/           alterações locais e mesclagem com a API
 │       ├── paginas/          Login, Dashboard, Clientes, Detalhe, Funil
 │       └── styles/           design system copiado do protótipo
-├── docs/SPEC.md              especificação do sistema: requisitos, regras e decisões
+├── docs/SPEC.md              especificação: requisitos, regras e decisões
 ├── docs/openapi.yaml         contrato das rotas, para importar no Apidog
 ├── api/                      Azure Functions (Node v4, ESM)
 │   ├── src/functions/        as 14 rotas
@@ -197,5 +212,5 @@ Mini-CRM/
 
 ## Tecnologias
 
-React 19, Vite 8, TypeScript, React Router 7, Azure Functions (modelo Node v4),
+React 19, Vite 8, TypeScript, React Router 7, Azure Functions no modelo Node v4 e
 Azure Static Web Apps.
