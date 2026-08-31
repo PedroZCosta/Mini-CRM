@@ -9,6 +9,7 @@ usuário. Os requisitos vêm da especificação do grupo (33 requisitos funciona
 identidade visual vem do protótipo validado pela equipe.
 
 - **Integrantes:** ver [GRUPO.md](GRUPO.md)
+- **Especificação do sistema:** ver [docs/SPEC.md](docs/SPEC.md)
 - **Prompts usados na geração:** ver [PROMPT.MD](PROMPT.MD)
 
 ## Endereços
@@ -109,7 +110,7 @@ protótipo. A senha de todos é `demo1234`.
 
 ## Mock no Apidog
 
-A especificação OpenAPI das 14 rotas está em [`docs/openapi.yaml`](docs/openapi.yaml),
+O contrato OpenAPI das 14 rotas está em [`docs/openapi.yaml`](docs/openapi.yaml),
 com os mesmos contratos que as Azure Functions devolvem. Ela foi importada no Apidog
 (**Import → OpenAPI/Swagger**), que criou os endpoints, gerou o Cloud Mock a partir
 dos schemas e publicou a documentação em <https://rydx0vewxp.apidog.io>.
@@ -180,7 +181,8 @@ Mini-CRM/
 │       ├── estado/           alterações locais e mesclagem com a API
 │       ├── paginas/          Login, Dashboard, Clientes, Detalhe, Funil
 │       └── styles/           design system copiado do protótipo
-├── docs/openapi.yaml         especificação das rotas, para importar no Apidog
+├── docs/SPEC.md              especificação do sistema: requisitos, regras e decisões
+├── docs/openapi.yaml         contrato das rotas, para importar no Apidog
 ├── api/                      Azure Functions (Node v4, ESM)
 │   ├── src/functions/        as 14 rotas
 │   ├── src/shared/           dados, escopo por perfil, validação, HTTP

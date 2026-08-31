@@ -98,6 +98,21 @@ e publicou a documentação. Na conferência, o mock respondia com valores aleat
 porque o modo padrão (Smart Mock) monta a resposta olhando apenas o tipo de cada
 campo. A correção está descrita no item 5 da lista abaixo.
 
+## Prompt 5 — especificação do sistema
+
+> Escreva a especificação do projeto a partir do levantamento de requisitos e do
+> que já está implementado. O professor sugeriu essa etapa e acabamos não fazendo
+> antes de programar, e ela serve também para documentar o projeto.
+
+Resultado em [`docs/SPEC.md`](docs/SPEC.md): visão geral, perfis, os 33 requisitos
+funcionais com o que foi atendido nesta entrega, as regras de negócio que a API
+aplica, o modelo de dados, os contratos das 14 rotas, os 9 requisitos não
+funcionais, seis decisões de arquitetura e as limitações conhecidas.
+
+O documento registra logo no início que foi escrito **depois** da implementação, e
+não antes. A ordem não é a ideal, mas o texto descreve o sistema que existe, o que
+é mais útil do que uma especificação escrita no começo e nunca atualizada.
+
 ---
 
 ## Como a IA foi usada em cada parte
@@ -110,6 +125,7 @@ campo. A correção está descrita no item 5 da lista abaixo.
 | Telas | Escreveu os componentes React consumindo a API | Escolha das telas e revisão do resultado |
 | Testes | Escreveu 29 casos de teste da API e um roteiro que percorre as telas no navegador | Revisão dos casos e das falhas encontradas |
 | Documentação e mock | Escreveu o `openapi.yaml` com os exemplos capturados da API em execução, para importar no Apidog | Criação do projeto no Apidog e publicação da documentação |
+| Especificação | Consolidou o levantamento da planilha, o arc42 e o código em `docs/SPEC.md`, marcando requisito a requisito o que foi atendido | Levantamento original dos 33 requisitos funcionais e 9 não funcionais |
 
 ## Correções feitas a partir de falhas encontradas
 
