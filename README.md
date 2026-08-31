@@ -18,6 +18,7 @@ identidade visual vem do protótipo validado pela equipe.
 | Site (Azure Static Web Apps) | <https://ambitious-pebble-077133f10.7.azurestaticapps.net> |
 | API (Azure Functions integrada) | <https://ambitious-pebble-077133f10.7.azurestaticapps.net/api/health> (mesma origem do site, sob `/api`) |
 | Documentação no Apidog | <https://rydx0vewxp.apidog.io> |
+| Mock server no Apidog (Cloud Mock) | <https://mock.apidog.com/m1/1365834-1370078-default> |
 
 ## Telas
 
@@ -113,10 +114,21 @@ com os mesmos contratos que as Azure Functions devolvem. Ela foi importada no Ap
 (**Import → OpenAPI/Swagger**), que criou os endpoints, gerou o Cloud Mock a partir
 dos schemas e publicou a documentação em <https://rydx0vewxp.apidog.io>.
 
-O endereço do servidor de mock fica em **Environment → Cloud Mock** dentro do projeto
-no Apidog, no formato `https://mock.apidog.com/m1/<projeto>`. Para apontar o
-front-end a ele em vez das Azure Functions, basta definir a variável `VITE_API_URL`
-com essa URL antes do build.
+O servidor de mock (Cloud Mock) responde em
+<https://mock.apidog.com/m1/1365834-1370078-default>, com os mesmos caminhos da API:
+
+```bash
+curl https://mock.apidog.com/m1/1365834-1370078-default/health
+curl https://mock.apidog.com/m1/1365834-1370078-default/clientes
+```
+
+Para apontar o front-end a ele em vez das Azure Functions, basta definir a variável
+`VITE_API_URL` com essa URL antes do build.
+
+O Cloud Mock gera as respostas a partir dos schemas (Smart Mock), então os valores
+são aleatórios, apenas o formato é garantido. Os dados realistas do CRM vêm das
+Azure Functions. Para o mock devolver os exemplos do `openapi.yaml`, ligue
+**Response Example First** em Mock Settings.
 
 Quando o `docs/openapi.yaml` mudar, reimporte o arquivo no mesmo projeto para manter
 a documentação e o mock alinhados com a API.
