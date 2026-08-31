@@ -41,12 +41,22 @@ paths:
           description: API no ar
           content:
             application/json:
+              example:
+                status: ok
+                api: Mini CRM (PJBL) — dados mock
+                referencia: 2026-08-31
+                registros:
+                  usuarios: 8
+                  clientes: 46
+                  interacoes: 123
+                  oportunidades: 60
+                  tarefas: 22
               schema:
                 type: object
                 properties:
                   status: { type: string, example: ok }
                   api: { type: string, example: "Mini CRM (PJBL) — dados mock" }
-                  referencia: { type: string, format: date, example: "2026-08-25" }
+                  referencia: { type: string, format: date, example: "2026-08-31" }
                   registros:
                     type: object
                     properties:
@@ -66,6 +76,24 @@ paths:
           description: Lista de usuários
           content:
             application/json:
+              example:
+                itens:
+                  - id: u3
+                    nome: Rui Alves
+                    email: rui@empresa.com
+                    perfil: Admin
+                    status: Ativo
+                    gerenteId: null
+                    modoVisualizacao: Total
+                    seed: true
+                  - id: u1
+                    nome: Ana Costa
+                    email: ana@empresa.com
+                    perfil: Gerente
+                    status: Ativo
+                    gerenteId: null
+                    modoVisualizacao: Equipe
+                total: 8
               schema:
                 type: object
                 properties:
@@ -86,6 +114,59 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RespostaDashboard" }
+              example:
+                escopo:
+                  usuarioId: u1
+                  nome: Ana Costa
+                  perfil: Gerente
+                  modoVisualizacao: Equipe
+                  responsaveis:
+                    - u1
+                    - u2
+                clientes:
+                  total: 28
+                  porStatus:
+                    Prospect: 16
+                    Ativo: 9
+                    Inativo: 3
+                oportunidades:
+                  total: 41
+                  valorEmNegociacao: 1581000
+                  valorGanho: 629000
+                  ganhas: 11
+                  perdidas: 6
+                  porEtapa:
+                    - etapa: Prospecção
+                      quantidade: 5
+                      valorTotal: 264000
+                    - etapa: Contato
+                      quantidade: 12
+                      valorTotal: 769000
+                  motivosPerda:
+                    Sem verba: 2
+                    Sem resposta: 2
+                    Concorrente: 2
+                tarefas:
+                  total: 14
+                  pendentes: 13
+                  concluidas: 1
+                  vencidas: 3
+                  hoje: 2
+                  amanha: 3
+                  proximos15Dias: 5
+                ranking:
+                  - usuarioId: u2
+                    nome: Pedro Dias
+                    perfil: Vendedor
+                    ativo: true
+                    valorGanho: 235000
+                    oportunidadesGanhas: 5
+                  - usuarioId: u4
+                    nome: Bia Melo
+                    perfil: Vendedor
+                    ativo: false
+                    valorGanho: 210000
+                    oportunidadesGanhas: 3
 
   /clientes:
     get:
@@ -113,6 +194,43 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RespostaClientes" }
+              example:
+                itens:
+                  - id: c2
+                    nome: Camila Prado
+                    empresa: Beta Corp
+                    email: camila@betacorp.com.br
+                    telefone: (36) 97515-4598
+                    status: Prospect
+                    responsavelId: u5
+                    excluido: false
+                    responsavelNome: Larissa Ferraz
+                    semResponsavelAtivo: false
+                  - id: c12
+                    nome: Carla Alves
+                    empresa: Cedro Alimentos
+                    email: carla@cedroalime.com.br
+                    telefone: (42) 99416-7369
+                    status: Prospect
+                    responsavelId: u5
+                    excluido: false
+                    responsavelNome: Larissa Ferraz
+                    semResponsavelAtivo: false
+                paginacao:
+                  pagina: 1
+                  porPagina: 20
+                  total: 28
+                  totalPaginas: 2
+                filtros:
+                  q: ""
+                  status: Todos
+                  responsavelId: Todos
+                escopo:
+                  usuarioId: u1
+                  perfil: Gerente
+                  responsaveis:
+                    - u1
+                    - u2
     post:
       tags: [Clientes]
       summary: Cadastra cliente (nasce como Prospect)
@@ -128,6 +246,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Cliente" }
+              example:
+                id: c_q5oaqn
+                nome: Marina Duarte
+                empresa: Acme Logística
+                email: marina@acmelog.com.br
+                telefone: (11) 98888-1234
+                status: Prospect
+                responsavelId: u2
+                excluido: false
+                responsavelNome: Pedro Dias
+                semResponsavelAtivo: false
         "400":
           $ref: "#/components/responses/ErroValidacao"
 
@@ -146,6 +275,57 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RespostaClienteDetalhe" }
+              example:
+                cliente:
+                  id: c2
+                  nome: Camila Prado
+                  empresa: Beta Corp
+                  email: camila@betacorp.com.br
+                  telefone: (36) 97515-4598
+                  status: Prospect
+                  responsavelId: u5
+                  excluido: false
+                  responsavelNome: Larissa Ferraz
+                  semResponsavelAtivo: false
+                interacoes:
+                  - id: i_770uem
+                    clienteId: c2
+                    tipo: Ligação
+                    icon: phone
+                    cor: signal
+                    obs: Cliente relatou dificuldade no uso do produto, encaminhado ao suporte.
+                    autorId: u5
+                    data: 2026-08-23
+                  - id: i_8e8azh
+                    clienteId: c2
+                    tipo: Reunião
+                    icon: meeting
+                    cor: amber
+                    obs: Demo do produto com equipe técnica.
+                    autorId: u5
+                    data: 2026-08-15
+                oportunidades:
+                  - id: o_fvo895
+                    clienteId: c2
+                    titulo: Expansão de equipe
+                    etapa: Proposta
+                    resultado: null
+                    motivoPerda: null
+                    valor: 59000
+                    responsavelId: u5
+                    dataPrevista: 2026-10-31
+                    atualizada: 2026-08-15
+                  - id: o_7w0735
+                    clienteId: c2
+                    titulo: Plano mensal
+                    etapa: Fechado
+                    resultado: perdido
+                    motivoPerda: Sem verba
+                    valor: 63000
+                    responsavelId: u5
+                    dataPrevista: 2026-09-19
+                    atualizada: 2026-08-06
+                tarefas: []
         "404":
           $ref: "#/components/responses/NaoEncontrado"
     patch:
@@ -163,6 +343,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Cliente" }
+              example:
+                id: c2
+                nome: Camila Prado
+                empresa: Beta Corp
+                email: camila@betacorp.com.br
+                telefone: (36) 97515-4598
+                status: Ativo
+                responsavelId: u5
+                excluido: false
+                responsavelNome: Larissa Ferraz
+                semResponsavelAtivo: false
         "400":
           $ref: "#/components/responses/ErroValidacao"
         "404":
@@ -177,6 +368,18 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Cliente" }
+              example:
+                id: c2
+                nome: Camila Prado
+                empresa: Beta Corp
+                email: camila@betacorp.com.br
+                telefone: (36) 97515-4598
+                status: Inativo
+                responsavelId: u5
+                excluido: true
+                responsavelNome: Larissa Ferraz
+                semResponsavelAtivo: false
+                mensagem: "Exclusão lógica aplicada: o cliente sai das listagens e o histórico é preservado."
         "404":
           $ref: "#/components/responses/NaoEncontrado"
 
@@ -207,6 +410,15 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Interacao" }
+              example:
+                id: i_w4fx2u
+                clienteId: c2
+                tipo: Ligação
+                icon: phone
+                cor: signal
+                obs: Cliente pediu proposta revisada até sexta.
+                data: 2026-08-31
+                autorId: u2
         "400":
           $ref: "#/components/responses/ErroValidacao"
         "404":
@@ -225,6 +437,81 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RespostaFunil" }
+              example:
+                etapas:
+                  - etapa: Prospecção
+                    quantidade: 5
+                    valorTotal: 264000
+                    ganhas: 0
+                    perdidas: 0
+                    itens:
+                      - id: o_agbky
+                        clienteId: c6
+                        titulo: Plano mensal
+                        etapa: Prospecção
+                        resultado: null
+                        motivoPerda: null
+                        valor: 96000
+                        responsavelId: u2
+                        dataPrevista: 2026-09-17
+                        atualizada: 2026-08-17
+                        clienteNome: Karina Lacerda
+                        clienteEmpresa: Sigma Ltda
+                        responsavelNome: Pedro Dias
+                        semResponsavelAtivo: false
+                      - id: o_6dkwm8
+                        clienteId: c22
+                        titulo: Plano mensal
+                        etapa: Prospecção
+                        resultado: null
+                        motivoPerda: null
+                        valor: 75000
+                        responsavelId: u5
+                        dataPrevista: 2026-09-15
+                        atualizada: 2026-08-27
+                        clienteNome: William Teixeira
+                        clienteEmpresa: Amêndoa Studio
+                        responsavelNome: Larissa Ferraz
+                        semResponsavelAtivo: false
+                  - etapa: Contato
+                    quantidade: 12
+                    valorTotal: 769000
+                    ganhas: 0
+                    perdidas: 0
+                    itens:
+                      - id: o_bmghnl
+                        clienteId: c16
+                        titulo: Módulo extra
+                        etapa: Contato
+                        resultado: null
+                        motivoPerda: null
+                        valor: 113000
+                        responsavelId: u2
+                        dataPrevista: 2026-09-29
+                        atualizada: 2026-08-05
+                        clienteNome: Pedro Moraes
+                        clienteEmpresa: Prisma Educação
+                        responsavelNome: Pedro Dias
+                        semResponsavelAtivo: false
+                      - id: o_agehdd
+                        clienteId: c33
+                        titulo: Licenças adicionais
+                        etapa: Contato
+                        resultado: null
+                        motivoPerda: null
+                        valor: 108000
+                        responsavelId: u4
+                        dataPrevista: 2026-11-03
+                        atualizada: 2026-08-03
+                        clienteNome: Vanessa Rocha
+                        clienteEmpresa: Nortex Sistemas
+                        responsavelNome: Bia Melo
+                        semResponsavelAtivo: true
+                total: 41
+                valorEmNegociacao: 1581000
+                escopo:
+                  usuarioId: u1
+                  perfil: Gerente
     post:
       tags: [Oportunidades]
       summary: Cria oportunidade vinculada a um cliente
@@ -249,6 +536,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Oportunidade" }
+              example:
+                id: o_rl1hh6
+                clienteId: c2
+                titulo: Renovação de contrato
+                etapa: Prospecção
+                resultado: null
+                motivoPerda: null
+                valor: 48000
+                dataPrevista: 2026-10-15
+                atualizada: 2026-08-31
+                responsavelId: u2
+                clienteNome: Camila Prado
+                clienteEmpresa: Beta Corp
+                responsavelNome: Pedro Dias
+                semResponsavelAtivo: false
         "400":
           $ref: "#/components/responses/ErroValidacao"
 
@@ -298,6 +600,24 @@ paths:
           description: Oportunidade movida, com o funil recalculado
           content:
             application/json:
+              example:
+                oportunidade:
+                  id: o_agbky
+                  clienteId: c6
+                  titulo: Plano mensal
+                  etapa: Proposta
+                  resultado: null
+                  motivoPerda: null
+                  valor: 96000
+                  responsavelId: u2
+                  dataPrevista: 2026-09-17
+                  atualizada: 2026-08-31
+                  clienteNome: Karina Lacerda
+                  clienteEmpresa: Sigma Ltda
+                  responsavelNome: Pedro Dias
+                  semResponsavelAtivo: false
+                clienteStatus: null
+                reaberta: false
               schema:
                 type: object
                 properties:
@@ -326,6 +646,38 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RespostaTarefas" }
+              example:
+                itens:
+                  - id: t_4dtnzk
+                    titulo: Enviar proposta de renovação
+                    clienteId: c12
+                    vinculoTipo: cliente
+                    vinculoLabel: Cedro Alimentos
+                    vinculoOppId: null
+                    responsavelId: u5
+                    status: concluida
+                    vencimento: 2026-08-25
+                    faixa: null
+                    clienteNome: Carla Alves
+                  - id: t_g5sitz
+                    titulo: Preparar apresentação
+                    clienteId: c16
+                    vinculoTipo: oportunidade
+                    vinculoLabel: Módulo extra
+                    vinculoOppId: o_bmghnl
+                    responsavelId: u2
+                    status: pendente
+                    vencimento: 2026-08-26
+                    faixa: vencida
+                    clienteNome: Pedro Moraes
+                total: 14
+                resumo:
+                  pendentes: 13
+                  concluidas: 1
+                  vencidas: 3
+                  hoje: 2
+                  amanha: 3
+                  proximos15Dias: 5
 
   /tarefas/{id}:
     patch:
@@ -352,6 +704,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Tarefa" }
+              example:
+                id: t_4dtnzk
+                titulo: Enviar proposta de renovação
+                clienteId: c12
+                vinculoTipo: cliente
+                vinculoLabel: Cedro Alimentos
+                vinculoOppId: null
+                responsavelId: u5
+                status: concluida
+                vencimento: 2026-08-25
+                faixa: null
         "400":
           $ref: "#/components/responses/ErroValidacao"
         "404":

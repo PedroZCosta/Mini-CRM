@@ -125,10 +125,10 @@ curl https://mock.apidog.com/m1/1365834-1370078-default/clientes
 Para apontar o front-end a ele em vez das Azure Functions, basta definir a variável
 `VITE_API_URL` com essa URL antes do build.
 
-O Cloud Mock gera as respostas a partir dos schemas (Smart Mock), então os valores
-são aleatórios, apenas o formato é garantido. Os dados realistas do CRM vêm das
-Azure Functions. Para o mock devolver os exemplos do `openapi.yaml`, ligue
-**Response Example First** em Mock Settings.
+Cada resposta de sucesso do `openapi.yaml` carrega um **exemplo capturado da própria
+API**, e não um valor inventado. Com a opção **Response Example First** ligada em
+Mock Settings, o Cloud Mock devolve esses exemplos em vez de gerar dados aleatórios
+a partir dos tipos, então o mock e as Azure Functions respondem a mesma coisa.
 
 Quando o `docs/openapi.yaml` mudar, reimporte o arquivo no mesmo projeto para manter
 a documentação e o mock alinhados com a API.

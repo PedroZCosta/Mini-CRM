@@ -1,7 +1,9 @@
 # Prompts utilizados
 
-Este arquivo registra como a IA generativa (Claude, via Claude Code) foi usada para
-gerar o front-end e a API deste projeto, conforme pedido no enunciado do PJBL.
+Este arquivo registra como a IA generativa foi usada para gerar o front-end e a API
+deste projeto, conforme pedido no enunciado do PJBL. A ferramenta foi o **Claude Code**
+(modelo Claude Opus), conduzido em conversa, com o código sendo revisado e testado a
+cada etapa.
 
 O trabalho não saiu de um único prompt. Foi conduzido em etapas, com material de
 apoio produzido antes pela equipe e com decisões de arquitetura tomadas pelo grupo
@@ -86,6 +88,16 @@ porque sua localização é apenas metadado e não restringe onde os recursos vi
 segunda: o deploy é feito por linha de comando, com o SWA CLI e token de publicação,
 em vez de um pipeline no GitHub Actions.
 
+## Prompt 4 — mock no Apidog e conferência da entrega
+
+> Onde eu pego a URL do mock no Apidog? Confira se está tudo certo e se a entrega
+> está de acordo com o enunciado.
+
+A especificação OpenAPI das 14 rotas foi importada no Apidog, que gerou o Cloud Mock
+e publicou a documentação. Na conferência, o mock respondia com valores aleatórios,
+porque o modo padrão (Smart Mock) monta a resposta olhando apenas o tipo de cada
+campo. A correção está descrita no item 5 da lista abaixo.
+
 ---
 
 ## Como a IA foi usada em cada parte
@@ -97,6 +109,7 @@ em vez de um pipeline no GitHub Actions.
 | API | Escreveu as 14 rotas, as validações e os testes | Decisão de usar Functions com estado no cliente |
 | Telas | Escreveu os componentes React consumindo a API | Escolha das telas e revisão do resultado |
 | Testes | Escreveu 29 casos de teste da API e um roteiro que percorre as telas no navegador | Revisão dos casos e das falhas encontradas |
+| Documentação e mock | Escreveu o `openapi.yaml` com os exemplos capturados da API em execução, para importar no Apidog | Criação do projeto no Apidog e publicação da documentação |
 
 ## Correções feitas a partir de falhas encontradas
 
@@ -112,3 +125,7 @@ corrigidos ainda nesta conversa:
 3. Textos vazando da barra lateral de 172px e abas renderizando com borda de botão.
 4. Dois avisos do linter: exportação que quebrava o Fast Refresh e `setState` dentro
    de efeito no controle de bloqueio de login.
+5. O mock do Apidog devolvia dados sem sentido (`"clientes": -44918985`), porque a
+   especificação descrevia apenas os tipos de cada campo. Corrigido capturando a
+   resposta real de cada uma das 14 rotas da API em execução e gravando-a como
+   exemplo no `openapi.yaml`, o que também melhorou a documentação publicada.
