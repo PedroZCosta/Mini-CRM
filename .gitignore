@@ -7,3 +7,4 @@ api/local.settings.json
 .DS_Store
 .vscode/
 swa-cli.config.json.log
+.apidog/
