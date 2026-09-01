@@ -1,9 +1,10 @@
 import { app } from '@azure/functions';
 import { carregarDados, ETAPAS, STATUS_CLIENTE } from '../shared/dados.js';
 import {
-  escopoDaRequisicao, clientesVisiveis, oportunidadesVisiveis, tarefasVisiveis,
+  escopoDaRequisicao, oportunidadesVisiveis, tarefasVisiveis,
 } from '../shared/escopo.js';
-import { ok, naoEncontrado } from '../shared/http.js';
+import { ok, naoEncontrado, erroInterno } from '../shared/http.js';
+import { colecaoClientes, mongoConfigurado } from '../shared/mongo.js';
 
 /**
  * GET /api/dashboard — RF11/RF15/RF19/RF31.
@@ -15,11 +16,18 @@ app.http('dashboard', {
   authLevel: 'anonymous',
   route: 'dashboard',
   handler: async (request) => {
+    if (!mongoConfigurado()) {
+      return erroInterno('MONGODB_URI não configurada: a coleção de clientes não está acessível');
+    }
     const { usuario, ids } = escopoDaRequisicao(request);
     if (!usuario) return naoEncontrado('usuarioId não encontrado');
 
     const { usuarios } = carregarDados();
-    const clientes = clientesVisiveis(ids);
+    /* Os clientes vêm do MongoDB; o resto do dashboard segue na massa mock. */
+    const colecao = await colecaoClientes();
+    const clientes = await colecao
+      .find({ responsavelId: { $in: ids }, excluido: { $ne: true } }, { projection: { status: 1 } })
+      .toArray();
     const oportunidades = oportunidadesVisiveis(ids);
     const tarefas = tarefasVisiveis(ids);
 

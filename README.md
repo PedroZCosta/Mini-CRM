@@ -4,14 +4,16 @@ Projeto da disciplina de Soluções Cloud. É um CRM enxuto, com carteira de cli
 histórico de interações, funil de oportunidades, tarefas com aviso de vencimento e
 indicadores que mudam conforme o perfil de quem está logado.
 
-O front-end é React e conversa com uma API de Azure Functions que serve dados mock.
-Tudo está publicado no Azure Static Web Apps. Os requisitos saíram do levantamento
+O front-end é React e conversa com uma API de Azure Functions. Os clientes são
+gravados num banco MongoDB Atlas; as demais entidades ainda são servidas de uma massa
+mock em memória. Tudo está publicado no Azure Static Web Apps. Os requisitos saíram do levantamento
 que o grupo fez (33 requisitos funcionais) e a aparência veio do protótipo em HTML
 que a equipe validou antes de começar a programar.
 
 - **Quem fez:** [GRUPO.md](GRUPO.md)
 - **O que o sistema faz, em detalhe:** [docs/SPEC.md](docs/SPEC.md)
 - **Como a IA foi usada:** [PROMPT.MD](PROMPT.MD)
+- **Evidências da semana 5 (MongoDB):** [docs/EVIDENCIAS-SEMANA05.md](docs/EVIDENCIAS-SEMANA05.md)
 
 ## Endereços
 
@@ -50,10 +52,10 @@ o Administrador recebe tudo. Essa é a regra do RF15.
 | GET | `/api/health` | Diz se a API está de pé e quantos registros existem |
 | GET | `/api/usuarios` | Lista os usuários, sem nenhum dado de senha |
 | GET | `/api/dashboard` | Indicadores, funil resumido, tarefas e ranking |
-| GET | `/api/clientes` | Lista com busca (`q`), filtros (`status`, `responsavelId`) e 20 por página |
+| GET | `/api/clientes` | Pesquisa no MongoDB, com busca (`q`), filtros e 20 por página |
 | GET | `/api/clientes/{id}` | O cliente com suas interações, oportunidades e tarefas |
-| POST | `/api/clientes` | Cadastra um cliente, que nasce como Prospect |
-| PATCH | `/api/clientes/{id}` | Altera campos do cliente |
+| POST | `/api/clientes` | Insere no MongoDB, o cliente nasce como Prospect |
+| PATCH | `/api/clientes/{id}` | Altera o documento no MongoDB |
 | DELETE | `/api/clientes/{id}` | Exclusão lógica: vira Inativo e some das listagens |
 | POST | `/api/clientes/{id}/interacoes` | Registra uma ligação, e-mail ou reunião |
 | GET | `/api/oportunidades` | O funil nas quatro etapas, com contagem e soma |
@@ -69,13 +71,17 @@ curl "https://ambitious-pebble-077133f10.7.azurestaticapps.net/api/clientes?usua
 curl "https://ambitious-pebble-077133f10.7.azurestaticapps.net/api/dashboard?usuarioId=u1"
 ```
 
-### Por que nada é gravado em banco
+### O que grava em banco e o que não grava
 
-Azure Functions não guarda estado e este projeto não tem banco de dados. Então as
-operações de escrita **validam** o que chega, aplicam as regras de negócio e
-devolvem o registro pronto. Quem guarda o resultado é o front-end.
+Os **clientes** ficam numa coleção do MongoDB Atlas. As quatro rotas de cliente
+(pesquisar, inserir, alterar e excluir) falam com o banco de verdade, então o que
+você cadastra continua lá depois de fechar o navegador.
 
-Isso não deixa a validação de enfeite. Tente cadastrar um cliente com e-mail
+As demais entidades (usuários, oportunidades, interações e tarefas) seguem numa
+massa mock em memória. Para essas, a Function valida a escrita e devolve o registro
+resultante, mas quem guarda é o front-end, no `localStorage`.
+
+Em ambos os casos a validação é real. Tente cadastrar um cliente com e-mail
 inválido e a resposta é `400` com a lista inteira de problemas, não só o primeiro:
 
 ```json
@@ -93,7 +99,9 @@ mandar `reabrir: true` no corpo (RF09).
 
 A massa vem do script `api/scripts/gerar-mock.mjs`, que usa uma semente fixa. Por
 isso ela é sempre a mesma: 8 usuários, 46 clientes, 60 oportunidades, 123 interações
-e 22 tarefas.
+e 22 tarefas. Os 46 clientes são carregados no MongoDB por
+`api/scripts/seed-mongo.mjs`, com os mesmos ids, para que as oportunidades, as
+interações e as tarefas continuem apontando para os clientes certos.
 
 Tem um detalhe do qual gostamos: as datas não são gravadas como data absoluta, e sim
 como **deslocamento em dias**. A API converte para data real na hora da requisição.
@@ -156,10 +164,25 @@ Para o front-end usar o mock no lugar das Functions, é só definir a variável
 
 Precisa de Node.js 22 ou mais novo.
 
+Também precisa de uma string de conexão do MongoDB Atlas em
+`api/local.settings.json`, que não vai para o repositório:
+
+```json
+{
+  "Values": {
+    "MONGODB_URI": "mongodb+srv://usuario:senha@cluster.mongodb.net/",
+    "MONGODB_DB": "mini_crm"
+  }
+}
+```
+
 ```bash
 # instala as dependências
 npm install --prefix app
 npm install --prefix api
+
+# carrega os 46 clientes na coleção (só na primeira vez)
+cd api && node scripts/seed-mongo.mjs && cd ..
 
 # sobe a API em http://localhost:7071
 node api/scripts/servidor-local.mjs
@@ -182,8 +205,10 @@ Core Tools falhava no ambiente do grupo. Se você tiver o `func` instalado,
 node api/scripts/testar-api.mjs
 ```
 
-São 29 casos, cobrindo o escopo por perfil, a paginação, os filtros, as validações
-de cada entidade e as regras de negócio dos requisitos. O front tem ainda
+São 30 casos, cobrindo o escopo por perfil, a paginação, os filtros, as validações
+de cada entidade, as regras de negócio dos requisitos e a persistência no MongoDB.
+Os testes gravam de verdade e apagam os próprios registros no final, então precisam
+da `MONGODB_URI` configurada. O front tem ainda
 `npm run lint --prefix app` e `npm run build --prefix app`.
 
 ## Como o projeto está organizado
@@ -201,16 +226,17 @@ Mini-CRM/
 │       ├── paginas/          Login, Dashboard, Clientes, Detalhe, Funil
 │       └── styles/           design system copiado do protótipo
 ├── docs/SPEC.md              especificação: requisitos, regras e decisões
+├── docs/EVIDENCIAS-SEMANA05.md  evidências da atividade do MongoDB
 ├── docs/openapi.yaml         contrato das rotas, para importar no Apidog
 ├── api/                      Azure Functions (Node v4, ESM)
 │   ├── src/functions/        as 14 rotas
-│   ├── src/shared/           dados, escopo por perfil, validação, HTTP
+│   ├── src/shared/           dados, escopo por perfil, validação, HTTP, MongoDB
 │   ├── src/data/             massa mock gerada
-│   └── scripts/              gerador, testes e servidor local
+│   └── scripts/              gerador, carga no MongoDB, testes e servidor local
 └── swa-cli.config.json       configuração do Static Web Apps CLI
 ```
 
 ## Tecnologias
 
-React 19, Vite 8, TypeScript, React Router 7, Azure Functions no modelo Node v4 e
-Azure Static Web Apps.
+React 19, Vite 8, TypeScript, React Router 7, Azure Functions no modelo Node v4,
+MongoDB Atlas com o driver oficial `mongodb` e Azure Static Web Apps.

@@ -3,44 +3,7 @@
  * Ficam separadas do provider para poderem ser usadas em qualquer tela.
  */
 import type { Alteracoes } from './contexto';
-import type { Cliente, EtapaFunil, Interacao, Oportunidade, Tarefa } from '../tipos';
-
-interface FiltroClientes {
-  q: string;
-  status: string;
-  responsavelId: string;
-  responsaveisVisiveis: string[];
-}
-
-/** Um cliente criado nesta sessão só entra na lista se casar com os filtros ativos. */
-function casaComFiltro(cliente: Cliente, f: FiltroClientes) {
-  if (!f.responsaveisVisiveis.includes(cliente.responsavelId)) return false;
-  if (f.status !== 'Todos' && cliente.status !== f.status) return false;
-  if (f.responsavelId !== 'Todos' && cliente.responsavelId !== f.responsavelId) return false;
-  if (f.q) {
-    const termo = f.q.toLowerCase();
-    if (!cliente.nome.toLowerCase().includes(termo) && !cliente.empresa.toLowerCase().includes(termo)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-export function mesclarClientes(itens: Cliente[], a: Alteracoes, filtro: FiltroClientes) {
-  const aplicados = itens
-    .filter((c) => !a.clientesExcluidos.includes(c.id))
-    .map((c) => (a.clientesAlterados[c.id] ? { ...c, ...a.clientesAlterados[c.id] } : c));
-
-  /* Os criados agora aparecem no topo, como retorno visual imediato do cadastro. */
-  const novos = a.clientesNovos.filter((c) => casaComFiltro(c, filtro));
-  return { itens: [...novos, ...aplicados], novosVisiveis: novos.length };
-}
-
-export function mesclarCliente(cliente: Cliente, a: Alteracoes): Cliente {
-  const novo = a.clientesNovos.find((c) => c.id === cliente.id);
-  if (novo) return novo;
-  return a.clientesAlterados[cliente.id] ? { ...cliente, ...a.clientesAlterados[cliente.id] } : cliente;
-}
+import type { EtapaFunil, Interacao, Oportunidade, Tarefa } from '../tipos';
 
 export function mesclarInteracoes(itens: Interacao[], a: Alteracoes, clienteId: string) {
   const novas = a.interacoesNovas.filter((i) => i.clienteId === clienteId);

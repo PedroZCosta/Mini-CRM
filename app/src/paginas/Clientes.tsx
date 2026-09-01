@@ -9,8 +9,6 @@ import { Carregando, ErroCaixa } from '../componentes/Estados';
 import { Icone } from '../componentes/Icone';
 import { Modal } from '../componentes/Modal';
 import { Paginacao } from '../componentes/Paginacao';
-import { useAlteracoes } from '../estado/contexto';
-import { mesclarClientes } from '../estado/mesclar';
 import type { Cliente, RespostaClientes, Usuario } from '../tipos';
 import { useToast } from '../componentes/toast-contexto';
 
@@ -20,7 +18,6 @@ export function Clientes() {
   const { sessao } = useAuth();
   const usuarioId = sessao!.usuario.id;
   const navegar = useNavigate();
-  const { alteracoes, adicionarCliente, excluirCliente } = useAlteracoes();
   const mostrarToast = useToast();
 
   /* RF04 — busca e filtros ficam na URL, então sobrevivem à navegação e ao F5. */
@@ -32,6 +29,7 @@ export function Clientes() {
 
   const [buscaDigitada, setBuscaDigitada] = useState(q);
   const [modalNovo, setModalNovo] = useState(false);
+  const [paraEditar, setParaEditar] = useState<Cliente | null>(null);
   const [paraExcluir, setParaExcluir] = useState<Cliente | null>(null);
 
   /* Busca só dispara depois que o usuário para de digitar. */
@@ -66,9 +64,9 @@ export function Clientes() {
   if (!lista.dados) return null;
 
   const visiveis = lista.dados.escopo.responsaveis;
-  const { itens } = mesclarClientes(lista.dados.itens, alteracoes, {
-    q, status, responsavelId, responsaveisVisiveis: visiveis,
-  });
+  /* A listagem vem inteira do MongoDB: cadastro, alteração e exclusão são
+     gravados pela API, então basta recarregar depois de cada operação. */
+  const itens = lista.dados.itens;
 
   /* RF04 — só entram no filtro os responsáveis que este perfil enxerga. */
   const responsaveis = (usuarios.dados?.itens || []).filter((u) => visiveis.includes(u.id));
@@ -77,7 +75,7 @@ export function Clientes() {
     if (!paraExcluir) return;
     try {
       await api.remover<Cliente>(`/clientes/${paraExcluir.id}`);
-      excluirCliente(paraExcluir.id);
+      lista.recarregar();
       mostrarToast(`${paraExcluir.nome} passou a Inativo e saiu da listagem.`);
     } catch (e) {
       mostrarToast(e instanceof ErroApi ? e.message : 'Falha ao excluir.');
@@ -177,6 +175,13 @@ export function Clientes() {
                   <div className="row-actions">
                     <button
                       className="btn btn-icon btn-sm btn-ghost"
+                      title="Editar cliente"
+                      onClick={(e) => { e.stopPropagation(); setParaEditar(c); }}
+                    >
+                      <Icone nome="edit" />
+                    </button>
+                    <button
+                      className="btn btn-icon btn-sm btn-ghost"
                       title="Excluir (lógico)"
                       onClick={(e) => { e.stopPropagation(); setParaExcluir(c); }}
                     >
@@ -197,19 +202,33 @@ export function Clientes() {
       </div>
 
       <p style={{ marginTop: 10, fontSize: 11.5, color: 'var(--muted)' }}>
-        A exclusão é lógica (RF03): o cliente passa a Inativo e sai das listagens, mas interações,
-        oportunidades e tarefas continuam no banco.
+        Cadastro, alteração e exclusão gravam no MongoDB Atlas. A exclusão é lógica (RF03):
+        o cliente passa a Inativo e sai das listagens, mas o documento e o histórico ficam no banco.
       </p>
 
       {modalNovo && (
-        <ModalNovoCliente
+        <ModalCliente
           responsaveis={responsaveis}
           padraoResponsavel={sessao!.usuario.perfil === 'Vendedor' ? sessao!.usuario.id : ''}
           aoFechar={() => setModalNovo(false)}
-          aoCriar={(cliente) => {
-            adicionarCliente(cliente);
+          aoSalvar={(cliente) => {
+            lista.recarregar();
             setModalNovo(false);
             mostrarToast(`${cliente.nome} cadastrado como ${cliente.status}.`);
+          }}
+        />
+      )}
+
+      {paraEditar && (
+        <ModalCliente
+          cliente={paraEditar}
+          responsaveis={responsaveis}
+          padraoResponsavel={paraEditar.responsavelId}
+          aoFechar={() => setParaEditar(null)}
+          aoSalvar={(cliente) => {
+            lista.recarregar();
+            setParaEditar(null);
+            mostrarToast(`${cliente.nome} atualizado no banco.`);
           }}
         />
       )}
@@ -238,18 +257,28 @@ export function Clientes() {
   );
 }
 
-/** RF03 — cadastro de cliente. A validação real acontece na Azure Function. */
-function ModalNovoCliente({
-  responsaveis, padraoResponsavel, aoFechar, aoCriar,
+/**
+ * RF03 — cadastro e edição de cliente.
+ * Sem `cliente`, faz POST e insere no MongoDB. Com `cliente`, faz PATCH e altera
+ * o documento existente. A validação acontece na Azure Function, nos dois casos.
+ */
+function ModalCliente({
+  cliente, responsaveis, padraoResponsavel, aoFechar, aoSalvar,
 }: {
+  cliente?: Cliente;
   responsaveis: Usuario[];
   padraoResponsavel: string;
   aoFechar: () => void;
-  aoCriar: (cliente: Cliente) => void;
+  aoSalvar: (cliente: Cliente) => void;
 }) {
+  const edicao = Boolean(cliente);
   const [form, setForm] = useState({
-    nome: '', empresa: '', email: '', telefone: '',
-    responsavelId: padraoResponsavel || responsaveis[0]?.id || '',
+    nome: cliente?.nome ?? '',
+    empresa: cliente?.empresa ?? '',
+    email: cliente?.email ?? '',
+    telefone: cliente?.telefone ?? '',
+    responsavelId: cliente?.responsavelId || padraoResponsavel || responsaveis[0]?.id || '',
+    status: cliente?.status ?? 'Prospect',
   });
   const [erro, setErro] = useState<ErroApi | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -270,10 +299,12 @@ function ModalNovoCliente({
     setErro(null);
     setEnviando(true);
     try {
-      const cliente = await api.post<Cliente>('/clientes', form);
-      aoCriar(cliente);
+      const salvo = edicao
+        ? await api.patch<Cliente>(`/clientes/${cliente!.id}`, form)
+        : await api.post<Cliente>('/clientes', { ...form, status: undefined });
+      aoSalvar(salvo);
     } catch (falha) {
-      setErro(falha instanceof ErroApi ? falha : new ErroApi('Falha ao cadastrar', 0));
+      setErro(falha instanceof ErroApi ? falha : new ErroApi('Falha ao salvar', 0));
     } finally {
       setEnviando(false);
     }
@@ -281,13 +312,13 @@ function ModalNovoCliente({
 
   return (
     <Modal
-      titulo="Novo cliente"
+      titulo={edicao ? `Editar ${cliente!.nome}` : 'Novo cliente'}
       aoFechar={aoFechar}
       rodape={
         <>
           <button className="btn" onClick={aoFechar}>Cancelar</button>
           <button className="btn btn-pri" form="form-cliente" type="submit" disabled={enviando}>
-            {enviando ? 'Salvando…' : 'Cadastrar'}
+            {enviando ? 'Salvando…' : edicao ? 'Salvar alterações' : 'Cadastrar'}
           </button>
         </>
       }
@@ -334,9 +365,21 @@ function ModalNovoCliente({
           </div>
         </div>
 
+        {edicao && (
+          <div className="field" style={{ marginTop: 12 }}>
+            <label htmlFor="status">Status <span className="hint">— RF30</span></label>
+            <select className="select" id="status" {...campo('status')}>
+              {['Prospect', 'Ativo', 'Inativo'].map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="modal-note">
-          RF30 — todo cliente novo nasce com status <b>Prospect</b> e passa a Ativo na primeira
-          oportunidade ganha.
+          {edicao
+            ? 'A alteração é gravada no MongoDB Atlas pela Azure Function de update.'
+            : 'RF30 — todo cliente novo nasce com status Prospect e passa a Ativo na primeira oportunidade ganha.'}
         </div>
       </form>
     </Modal>

@@ -8,6 +8,7 @@
     "start": "func start"
   },
   "dependencies": {
-    "@azure/functions": "^4.16.2"
+    "@azure/functions": "^4.16.2",
+    "mongodb": "^7.6.0"
   }
 }

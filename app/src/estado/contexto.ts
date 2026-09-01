@@ -1,24 +1,22 @@
 /**
- * Alterações locais.
+ * Alterações locais das entidades que ainda não têm banco.
  *
- * As Azure Functions validam as operações de escrita e devolvem o registro
- * resultante, mas não gravam nada: são funções sem estado servindo dados mock.
- * Quem guarda o resultado é o front-end, aqui.
+ * Clientes são gravados no MongoDB Atlas pelas Azure Functions, então não passam
+ * por aqui. Interações, oportunidades e tarefas continuam sendo servidas da massa
+ * mock: para essas, a Function valida a escrita e devolve o registro resultante,
+ * mas não persiste, e quem memoriza a resposta é o front-end.
  *
- * O que a API decide continua vindo dela (id gerado, status inicial do cliente,
- * promoção para Ativo ao ganhar, motivo da perda). Este módulo só memoriza a
- * resposta e a mescla com o que as listagens trazem.
+ * O que a API decide continua vindo dela (id gerado, promoção para Ativo ao
+ * ganhar, motivo da perda). Este módulo só guarda a resposta e a mescla com o que
+ * as listagens trazem.
  *
  * O estado é persistido em localStorage para sobreviver ao recarregar a página
  * durante a apresentação. Limpar o navegador devolve a massa original.
  */
 import { createContext, useContext } from 'react';
-import type { Cliente, Interacao, Oportunidade, Tarefa } from '../tipos';
+import type { Interacao, Oportunidade, Tarefa } from '../tipos';
 
 export interface Alteracoes {
-  clientesNovos: Cliente[];
-  clientesAlterados: Record<string, Partial<Cliente>>;
-  clientesExcluidos: string[];
   interacoesNovas: Interacao[];
   oportunidadesNovas: Oportunidade[];
   oportunidadesAlteradas: Record<string, Partial<Oportunidade>>;
@@ -26,9 +24,6 @@ export interface Alteracoes {
 }
 
 export const ALTERACOES_VAZIAS: Alteracoes = {
-  clientesNovos: [],
-  clientesAlterados: {},
-  clientesExcluidos: [],
   interacoesNovas: [],
   oportunidadesNovas: [],
   oportunidadesAlteradas: {},
@@ -37,9 +32,6 @@ export const ALTERACOES_VAZIAS: Alteracoes = {
 
 export interface ContextoAlteracoes {
   alteracoes: Alteracoes;
-  adicionarCliente: (cliente: Cliente) => void;
-  alterarCliente: (id: string, mudancas: Partial<Cliente>) => void;
-  excluirCliente: (id: string) => void;
   adicionarInteracao: (interacao: Interacao) => void;
   adicionarOportunidade: (oportunidade: Oportunidade) => void;
   alterarOportunidade: (id: string, mudancas: Partial<Oportunidade>) => void;

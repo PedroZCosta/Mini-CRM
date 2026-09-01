@@ -18,6 +18,11 @@ export function requisicaoInvalida(mensagem, erros = []) {
   return { status: 400, headers: CABECALHOS, jsonBody: { erro: mensagem, erros } };
 }
 
+/** 500 — falha de infraestrutura, como banco indisponível. */
+export function erroInterno(mensagem) {
+  return { status: 500, headers: CABECALHOS, jsonBody: { erro: mensagem } };
+}
+
 export function naoEncontrado(mensagem) {
   return { status: 404, headers: CABECALHOS, jsonBody: { erro: mensagem } };
 }

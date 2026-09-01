@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ALTERACOES_VAZIAS, AlteracoesContext, type Alteracoes,
 } from './contexto';
-import type { Cliente, Interacao, Oportunidade, Tarefa } from '../tipos';
+import type { Interacao, Oportunidade, Tarefa } from '../tipos';
 
 const CHAVE = 'mini-crm:alteracoes';
 
@@ -21,29 +21,6 @@ export function AlteracoesProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     localStorage.setItem(CHAVE, JSON.stringify(alteracoes));
   }, [alteracoes]);
-
-  const adicionarCliente = useCallback((cliente: Cliente) => {
-    setAlteracoes((a) => ({ ...a, clientesNovos: [cliente, ...a.clientesNovos] }));
-  }, []);
-
-  const alterarCliente = useCallback((id: string, mudancas: Partial<Cliente>) => {
-    setAlteracoes((a) => ({
-      ...a,
-      /* Cliente criado nesta sessão é alterado na própria lista de novos. */
-      clientesNovos: a.clientesNovos.map((c) => (c.id === id ? { ...c, ...mudancas } : c)),
-      clientesAlterados: a.clientesNovos.some((c) => c.id === id)
-        ? a.clientesAlterados
-        : { ...a.clientesAlterados, [id]: { ...a.clientesAlterados[id], ...mudancas } },
-    }));
-  }, []);
-
-  const excluirCliente = useCallback((id: string) => {
-    setAlteracoes((a) => ({
-      ...a,
-      clientesExcluidos: a.clientesExcluidos.includes(id) ? a.clientesExcluidos : [...a.clientesExcluidos, id],
-      clientesNovos: a.clientesNovos.filter((c) => c.id !== id),
-    }));
-  }, []);
 
   const adicionarInteracao = useCallback((interacao: Interacao) => {
     setAlteracoes((a) => ({ ...a, interacoesNovas: [interacao, ...a.interacoesNovas] }));
@@ -72,19 +49,16 @@ export function AlteracoesProvider({ children }: { children: React.ReactNode }) 
 
   const limpar = useCallback(() => setAlteracoes(ALTERACOES_VAZIAS), []);
 
-  const total = alteracoes.clientesNovos.length
-    + Object.keys(alteracoes.clientesAlterados).length
-    + alteracoes.clientesExcluidos.length
-    + alteracoes.interacoesNovas.length
+  const total = alteracoes.interacoesNovas.length
     + alteracoes.oportunidadesNovas.length
     + Object.keys(alteracoes.oportunidadesAlteradas).length
     + Object.keys(alteracoes.tarefasAlteradas).length;
 
   const valor = useMemo(() => ({
-    alteracoes, adicionarCliente, alterarCliente, excluirCliente, adicionarInteracao,
-    adicionarOportunidade, alterarOportunidade, alterarTarefa, limpar, total,
-  }), [alteracoes, adicionarCliente, alterarCliente, excluirCliente, adicionarInteracao,
-    adicionarOportunidade, alterarOportunidade, alterarTarefa, limpar, total]);
+    alteracoes, adicionarInteracao, adicionarOportunidade, alterarOportunidade,
+    alterarTarefa, limpar, total,
+  }), [alteracoes, adicionarInteracao, adicionarOportunidade, alterarOportunidade,
+    alterarTarefa, limpar, total]);
 
   return <AlteracoesContext.Provider value={valor}>{children}</AlteracoesContext.Provider>;
 }

@@ -10,7 +10,7 @@ import { Icone } from '../componentes/Icone';
 import { Modal } from '../componentes/Modal';
 import { useToast } from '../componentes/toast-contexto';
 import { useAlteracoes } from '../estado/contexto';
-import { mesclarCliente, mesclarInteracoes, mesclarOportunidades, mesclarTarefas } from '../estado/mesclar';
+import { mesclarInteracoes, mesclarOportunidades, mesclarTarefas } from '../estado/mesclar';
 import type { Interacao, RespostaClienteDetalhe, TipoInteracao } from '../tipos';
 import { dataCompleta, dataCurta, moeda } from '../util/formato';
 
@@ -39,15 +39,10 @@ export function ClienteDetalhe() {
   const [aba, setAba] = useState<Aba>('interacoes');
   const [modalInteracao, setModalInteracao] = useState(false);
 
-  /* Cliente cadastrado nesta sessão não existe na massa da API: o detalhe é
-     montado a partir do que a Function devolveu no POST, sem novo GET. */
-  const clienteLocal = alteracoes.clientesNovos.find((c) => c.id === id);
-
+  /* O cliente vem do MongoDB, inclusive o que acabou de ser cadastrado. */
   const detalhe = useApi<RespostaClienteDetalhe>(
-    (signal) => (clienteLocal
-      ? Promise.resolve({ cliente: clienteLocal, interacoes: [], oportunidades: [], tarefas: [] })
-      : api.get(`/clientes/${id}`, { usuarioId }, signal)),
-    [id, usuarioId, clienteLocal?.id],
+    (signal) => api.get(`/clientes/${id}`, { usuarioId }, signal),
+    [id, usuarioId],
   );
 
   if (detalhe.carregando && !detalhe.dados) return <Carregando texto="Carregando cliente…" />;
@@ -61,7 +56,7 @@ export function ClienteDetalhe() {
   }
   if (!detalhe.dados) return null;
 
-  const cliente = mesclarCliente(detalhe.dados.cliente, alteracoes);
+  const cliente = detalhe.dados.cliente;
   const interacoes = mesclarInteracoes(detalhe.dados.interacoes, alteracoes, cliente.id);
   const oportunidades = mesclarOportunidades(detalhe.dados.oportunidades, alteracoes, cliente.id);
   const tarefas = mesclarTarefas(detalhe.dados.tarefas, alteracoes);

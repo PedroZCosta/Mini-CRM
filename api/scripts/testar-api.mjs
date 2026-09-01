@@ -5,6 +5,15 @@
  * Uso: node scripts/testar-api.mjs
  */
 import { app } from '@azure/functions';
+import { carregarEnvLocal } from './carregar-env.mjs';
+
+/* As rotas de cliente falam com o MongoDB Atlas: a URI precisa estar no
+   ambiente antes de as Functions serem importadas. */
+carregarEnvLocal();
+if (!process.env.MONGODB_URI) {
+  console.error('Defina MONGODB_URI (api/local.settings.json) antes de rodar os testes.');
+  process.exit(1);
+}
 
 /* Intercepta o registro das rotas antes de importar as Functions. */
 const rotas = [];
@@ -205,9 +214,38 @@ await teste('POST /clientes com responsável inexistente responde 400', async ()
 });
 
 await teste('RF03 — DELETE aplica exclusão lógica', async () => {
-  const r = await chamar('DELETE', 'clientes/{id}', { params: { id: 'c1' } });
+  /* Exclui um cliente criado aqui, para não marcar um registro da carga inicial. */
+  const novo = await chamar('POST', 'clientes', {
+    corpo: { nome: 'Para Excluir', empresa: 'Saida SA', email: 'saida@saida.com.br', responsavelId: 'u2' },
+  });
+  const r = await chamar('DELETE', 'clientes/{id}', { params: { id: novo.jsonBody.id } });
   conferir(r.status === 200, `status ${r.status}`);
   conferir(r.jsonBody.excluido === true && r.jsonBody.status === 'Inativo', 'não marcou como inativo/excluído');
+
+  /* RF03 — some da listagem, mas o documento continua no banco. */
+  const listagem = await chamar('GET', 'clientes', { query: { usuarioId: 'u3', q: 'Para Excluir', porPagina: '100' } });
+  conferir(listagem.jsonBody.paginacao.total === 0, 'excluído ainda aparece na listagem');
+  const detalhe = await chamar('GET', 'clientes/{id}', { params: { id: novo.jsonBody.id }, query: { usuarioId: 'u3' } });
+  conferir(detalhe.status === 200, 'o documento deveria continuar no banco');
+});
+
+await teste('MongoDB — insert, update e find persistem de verdade', async () => {
+  const criado = await chamar('POST', 'clientes', {
+    corpo: { nome: 'Persistencia Teste', empresa: 'Atlas SA', email: 'p@atlas.com.br', responsavelId: 'u2' },
+  });
+  const id = criado.jsonBody.id;
+
+  const lido = await chamar('GET', 'clientes/{id}', { params: { id }, query: { usuarioId: 'u3' } });
+  conferir(lido.status === 200, 'cliente inserido não foi encontrado no banco');
+  conferir(lido.jsonBody.cliente.empresa === 'Atlas SA', 'gravou empresa errada');
+
+  await chamar('PATCH', 'clientes/{id}', { params: { id }, corpo: { empresa: 'Atlas ME', status: 'Ativo' } });
+  const relido = await chamar('GET', 'clientes/{id}', { params: { id }, query: { usuarioId: 'u3' } });
+  conferir(relido.jsonBody.cliente.empresa === 'Atlas ME', 'alteração não persistiu');
+  conferir(relido.jsonBody.cliente.status === 'Ativo', 'status alterado não persistiu');
+
+  const busca = await chamar('GET', 'clientes', { query: { usuarioId: 'u3', q: 'Persistencia', porPagina: '100' } });
+  conferir(busca.jsonBody.paginacao.total === 1, 'a pesquisa não achou o registro gravado');
 });
 
 await teste('RF05 — POST de interação valida o tipo', async () => {
@@ -331,6 +369,13 @@ await teste('POST sem corpo responde 400', async () => {
   const r = await chamar('POST', 'clientes');
   conferir(r.status === 400, `esperava 400, veio ${r.status}`);
 });
+
+/* Os testes gravam de verdade: remove o que foi criado e fecha a conexão. */
+const { colecaoClientes, encerrar } = await import('../src/shared/mongo.js');
+const colecao = await colecaoClientes();
+const limpeza = await colecao.deleteMany({ id: { $regex: '^c_' } });
+await encerrar();
+console.log(`\n${limpeza.deletedCount} registros de teste removidos do MongoDB.`);
 
 console.log(`\n${passou} passaram, ${falhou} falharam\n`);
 process.exit(falhou > 0 ? 1 : 0);

@@ -10,6 +10,10 @@
  */
 import { createServer } from 'node:http';
 import { app } from '@azure/functions';
+import { carregarEnvLocal } from './carregar-env.mjs';
+
+/* MONGODB_URI precisa estar no ambiente antes de as Functions serem importadas. */
+carregarEnvLocal();
 
 const rotas = [];
 app.http = (nome, cfg) => rotas.push({ nome, ...cfg });

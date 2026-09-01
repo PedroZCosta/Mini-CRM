@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "@azure/static-web-apps-cli": "^2.0.10"
+  },
+  "dependencies": {
+    "mongodb": "^7.6.0"
   }
 }

@@ -75,8 +75,8 @@ produto.
 |---|---|---|---|
 | RF01 | Login com e-mail e senha, mínimo de 8 caracteres com letras e números, bloqueio de 15 min após 5 tentativas, sessão de 8 h | Parcial | Tela de Login. As três regras funcionam, mas a validação é feita no front (`app/src/auth/`), porque não há backend de autenticação neste protótipo |
 | RF02 | Diferenciação de permissões entre Administrador, Gerente e Vendedor | Sim | `api/src/shared/escopo.js` filtra toda listagem; o front protege as rotas |
-| RF03 | Criar, visualizar, editar e excluir clientes, com exclusão lógica | Sim | `POST`, `PATCH` e `DELETE /api/clientes`; o excluído vira Inativo e sai das listagens |
-| RF04 | Busca por nome ou empresa e filtros por status e responsável, preservados na navegação | Sim | `GET /api/clientes?q=&status=&responsavelId=` |
+| RF03 | Criar, visualizar, editar e excluir clientes, com exclusão lógica | Sim | `POST`, `PATCH` e `DELETE /api/clientes`, gravando no MongoDB; o excluído vira Inativo e sai das listagens |
+| RF04 | Busca por nome ou empresa e filtros por status e responsável, preservados na navegação | Sim | `GET /api/clientes?q=&status=&responsavelId=`, resolvido por consulta no MongoDB |
 | RF05 | Registro de interações (ligação, e-mail, reunião) com data e observações | Sim | `POST /api/clientes/{id}/interacoes` |
 | RF06 | Histórico de interações e oportunidades por cliente | Sim | `GET /api/clientes/{id}`, abas da tela de detalhe |
 | RF07 | Oportunidades vinculadas a cliente, com valor, data prevista e responsável | Sim | `POST /api/oportunidades` |
@@ -181,7 +181,7 @@ Seis entidades. Os tipos completos estão em `app/src/tipos.ts` e os schemas em
 | Entidade | Campos principais | Relacionamentos |
 |---|---|---|
 | Usuário | `id`, `nome`, `email`, `perfil`, `status`, `gerenteId`, `modoVisualizacao` | `gerenteId` aponta para outro usuário |
-| Cliente | `id`, `nome`, `empresa`, `email`, `telefone`, `status`, `responsavelId`, `excluido` | Pertence a um usuário responsável |
+| Cliente | `id`, `nome`, `empresa`, `email`, `telefone`, `status`, `responsavelId`, `excluido` | Pertence a um usuário responsável. Persistido na coleção `clientes` do MongoDB |
 | Interação | `id`, `clienteId`, `tipo`, `obs`, `data`, `autorId` | Pertence a um cliente, registrada por um usuário |
 | Oportunidade | `id`, `clienteId`, `titulo`, `etapa`, `resultado`, `motivoPerda`, `valor`, `dataPrevista`, `responsavelId` | Pertence a um cliente e a um responsável |
 | Tarefa | `id`, `titulo`, `clienteId`, `vinculoTipo`, `vinculoOppId`, `vencimento`, `status`, `responsavelId` | Vinculada a um cliente ou a uma oportunidade |
@@ -223,7 +223,7 @@ fora do escopo do usuário.
 | RNF03 | Senhas com hash e rotas protegidas por autenticação | **Não atendido**, e por decisão consciente: o protótipo não tem backend de autenticação e as rotas são anônimas. Ver limitação 1 na seção 10 |
 | RNF04 | Compatível com Chrome, Firefox e Edge | Build padrão do Vite, sem API exclusiva de um navegador. Verificado em Chromium |
 | RNF05 | Código versionado e documentado | Repositório Git com README, especificação, OpenAPI, linter configurado e commits em Conventional Commits |
-| RNF06 | Dados não perdidos em caso de falha | **Não se aplica** nesta etapa: não há banco de dados, a massa é regerada por script determinístico |
+| RNF06 | Dados não perdidos em caso de falha | Parcial: os clientes ficam no MongoDB Atlas, que replica e faz backup do lado do serviço. As demais entidades são regeradas por script determinístico |
 | RNF07 | Mínimo de 100 clientes e 10 usuários simultâneos | A massa tem 46 clientes; o Static Web Apps absorve a concorrência exigida |
 | RNF08 | Layout utilizável a partir de 1366x768 | Herdado do protótipo, que já foi construído nessa faixa |
 | RNF09 | Transições fluidas no funil, com resposta visual imediata | As transições do design system foram preservadas; a movimentação é por ação na interface, não por arrastar o card |
@@ -239,11 +239,12 @@ em tempo de compilação.
 um Function App separado, a pasta `api/` é publicada junto com o site. Consequência:
 mesma origem, sem CORS, uma única URL para entregar e um único deploy.
 
-**D3. Funções sem estado com persistência no cliente.** Azure Functions não guarda
-estado e o projeto não tem banco. As operações de escrita **validam** e devolvem o
-registro resultante; o front guarda o resultado no `localStorage` e mescla com o
-que a API devolve. Foi o que permitiu entregar POST, PATCH e DELETE com validação
-real em vez de limitar tudo a GET.
+**D3. Persistência dividida entre banco e cliente.** Os clientes são gravados numa
+coleção do MongoDB Atlas, através das quatro Functions de cliente. As demais
+entidades continuam servidas de uma massa mock em memória: para elas a Function
+valida a escrita e devolve o registro resultante, e o front guarda no `localStorage`
+e mescla com o que a API devolve. A divisão é consequência do escopo das atividades,
+que pediu banco para uma entidade, e não do desenho ideal do sistema.
 
 **D4. Massa mock determinística com datas relativas.** A massa é gerada com semente
 fixa, então é sempre idêntica. As datas são gravadas como deslocamento em dias e
@@ -254,6 +255,12 @@ tempo.
 publicação, sem pipeline no GitHub Actions, a pedido do grupo. O Static Web Apps
 foi criado em Central US porque o serviço não existe em Brazil South, enquanto o
 resource group permanece em Brazil South, já que sua região é apenas metadado.
+
+**D7. MongoDB Atlas para a entidade Cliente.** O cluster é um M0 gratuito. A
+conexão fica num módulo compartilhado, com o `MongoClient` criado uma vez por
+processo, porque Azure Functions reaproveita o processo entre invocações e o M0
+aceita poucas conexões simultâneas. A string de conexão vem de variável de ambiente,
+nunca do código.
 
 **D6. Apidog como segundo caminho para o mesmo contrato.** O `openapi.yaml`
 descreve as 14 rotas e carrega exemplos capturados da API em execução. Importado no
@@ -266,17 +273,19 @@ formatos sem depender do Azure.
    API devolve, usando uma senha de demonstração comum. As rotas da API são
    anônimas. Em produção seria preciso provedor de identidade e autorização por
    token.
-2. **A escrita não é persistida entre sessões nem compartilhada entre usuários.**
-   Cada navegador guarda as próprias alterações. Limpar o `localStorage` devolve o
-   sistema à massa original.
-3. **Não há banco de dados.** A massa vive em um arquivo JSON carregado pela função.
+2. **Só a entidade Cliente é persistida.** Interações, oportunidades e tarefas
+   continuam guardadas no navegador de quem fez a operação. Limpar o `localStorage`
+   devolve essas entidades à massa original.
+3. **O histórico ainda não conversa com o banco.** As oportunidades, as interações e
+   as tarefas vivem num arquivo JSON carregado pela Function e apontam para os
+   clientes por id.
 4. **Nove requisitos permanecem fora da entrega**, listados na seção 4.
 
 ## 11. Verificação
 
 | O que | Comando | Resultado atual |
 |---|---|---|
-| Testes da API | `node api/scripts/testar-api.mjs` | 29 casos, todos passando |
+| Testes da API | `node api/scripts/testar-api.mjs` | 30 casos, todos passando |
 | Linter do front | `npm run lint --prefix app` | Sem avisos |
 | Build do front | `npm run build --prefix app` | Compila sem erros |
 
