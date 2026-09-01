@@ -13,7 +13,6 @@ que a equipe validou antes de começar a programar.
 - **Quem fez:** [GRUPO.md](GRUPO.md)
 - **O que o sistema faz, em detalhe:** [docs/SPEC.md](docs/SPEC.md)
 - **Como a IA foi usada:** [PROMPT.MD](PROMPT.MD)
-- **Evidências da semana 5 (MongoDB):** [docs/EVIDENCIAS-SEMANA05.md](docs/EVIDENCIAS-SEMANA05.md)
 
 ## Endereços
 
@@ -226,7 +225,6 @@ Mini-CRM/
 │       ├── paginas/          Login, Dashboard, Clientes, Detalhe, Funil
 │       └── styles/           design system copiado do protótipo
 ├── docs/SPEC.md              especificação: requisitos, regras e decisões
-├── docs/EVIDENCIAS-SEMANA05.md  evidências da atividade do MongoDB
 ├── docs/openapi.yaml         contrato das rotas, para importar no Apidog
 ├── api/                      Azure Functions (Node v4, ESM)
 │   ├── src/functions/        as 14 rotas

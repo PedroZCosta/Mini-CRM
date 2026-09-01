@@ -8,3 +8,7 @@ api/local.settings.json
 .vscode/
 swa-cli.config.json.log
 .apidog/
+
+# Evidências da entrega: ficam fora do repositório, viram documento no Word
+docs/evidencias/
+docs/EVIDENCIAS-SEMANA05.md
