@@ -27,6 +27,21 @@ export function naoEncontrado(mensagem) {
   return { status: 404, headers: CABECALHOS, jsonBody: { erro: mensagem } };
 }
 
+/**
+ * Envolve o handler para que uma exceção vire 500 com a mensagem, em vez de o
+ * host devolver uma resposta vazia. Falha de banco é o caso típico.
+ */
+export function protegido(handler) {
+  return async (request, context) => {
+    try {
+      return await handler(request, context);
+    } catch (e) {
+      context?.error?.('falha na Function:', e);
+      return erroInterno(e?.message || 'erro inesperado');
+    }
+  };
+}
+
 /** Lê o corpo JSON tolerando corpo vazio ou malformado. */
 export async function lerCorpo(request) {
   try {

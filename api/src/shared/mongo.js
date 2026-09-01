@@ -33,7 +33,14 @@ export async function conectar() {
       maxPoolSize: 5,
       serverSelectionTimeoutMS: 8000,
     });
-    conexao = cliente.connect();
+    /* Se o primeiro connect falhar (IP fora da allowlist do Atlas, por exemplo),
+       a promise rejeitada não pode ficar guardada no módulo: a invocação
+       seguinte precisa poder tentar de novo. */
+    conexao = cliente.connect().catch((erro) => {
+      cliente = null;
+      conexao = null;
+      throw erro;
+    });
   }
   await conexao;
   return cliente.db(BANCO);

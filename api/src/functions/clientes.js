@@ -3,7 +3,7 @@ import { carregarDados, STATUS_CLIENTE } from '../shared/dados.js';
 import {
   escopoDaRequisicao, oportunidadesVisiveis, tarefasVisiveis, nomeResponsavel,
 } from '../shared/escopo.js';
-import { ok, criado, requisicaoInvalida, naoEncontrado, erroInterno, lerCorpo, novoId } from '../shared/http.js';
+import { ok, criado, requisicaoInvalida, naoEncontrado, erroInterno, lerCorpo, novoId , protegido } from '../shared/http.js';
 import { colecaoClientes, semObjectId, mongoConfigurado } from '../shared/mongo.js';
 import { validarCliente } from '../shared/validacao.js';
 
@@ -38,7 +38,7 @@ app.http('clientes-listar', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'clientes',
-  handler: async (request) => {
+  handler: protegido(async (request) => {
     if (!mongoConfigurado()) return bancoIndisponivel();
     const { usuario, ids } = escopoDaRequisicao(request);
     if (!usuario) return naoEncontrado('usuarioId não encontrado');
@@ -75,7 +75,7 @@ app.http('clientes-listar', {
       filtros: { q: busca.toLowerCase(), status: status || 'Todos', responsavelId: responsavelId || 'Todos' },
       escopo: { usuarioId: usuario.id, perfil: usuario.perfil, responsaveis: ids },
     });
-  },
+  }),
 });
 
 /**
@@ -86,7 +86,7 @@ app.http('clientes-detalhe', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'clientes/{id}',
-  handler: async (request) => {
+  handler: protegido(async (request) => {
     if (!mongoConfigurado()) return bancoIndisponivel();
     const { usuario, ids } = escopoDaRequisicao(request);
     if (!usuario) return naoEncontrado('usuarioId não encontrado');
@@ -114,7 +114,7 @@ app.http('clientes-detalhe', {
         .filter((t) => t.clienteId === id || idsOportunidades.includes(t.vinculoOppId))
         .sort((a, b) => a.vencimento.localeCompare(b.vencimento)),
     });
-  },
+  }),
 });
 
 /** POST /api/clientes — RF03/RF30. Insere no MongoDB; nasce como Prospect. */
@@ -122,7 +122,7 @@ app.http('clientes-criar', {
   methods: ['POST'],
   authLevel: 'anonymous',
   route: 'clientes',
-  handler: async (request) => {
+  handler: protegido(async (request) => {
     if (!mongoConfigurado()) return bancoIndisponivel();
     const corpo = await lerCorpo(request);
     if (!corpo) return requisicaoInvalida('Envie um corpo JSON com os dados do cliente');
@@ -144,7 +144,7 @@ app.http('clientes-criar', {
     const colecao = await colecaoClientes();
     await colecao.insertOne({ ...cliente });
     return criado(enriquecer(cliente));
-  },
+  }),
 });
 
 /** PATCH /api/clientes/{id} — RF03. Altera no MongoDB só os campos enviados. */
@@ -152,7 +152,7 @@ app.http('clientes-atualizar', {
   methods: ['PATCH'],
   authLevel: 'anonymous',
   route: 'clientes/{id}',
-  handler: async (request) => {
+  handler: protegido(async (request) => {
     if (!mongoConfigurado()) return bancoIndisponivel();
     const corpo = await lerCorpo(request);
     if (!corpo) return requisicaoInvalida('Envie um corpo JSON com os campos a alterar');
@@ -174,7 +174,7 @@ app.http('clientes-atualizar', {
     if (!cliente) return naoEncontrado(`Cliente ${id} não encontrado`);
 
     return ok(enriquecer(cliente));
-  },
+  }),
 });
 
 /**
@@ -186,7 +186,7 @@ app.http('clientes-excluir', {
   methods: ['DELETE'],
   authLevel: 'anonymous',
   route: 'clientes/{id}',
-  handler: async (request) => {
+  handler: protegido(async (request) => {
     if (!mongoConfigurado()) return bancoIndisponivel();
     const { id } = request.params;
 
@@ -202,5 +202,5 @@ app.http('clientes-excluir', {
       ...enriquecer(cliente),
       mensagem: 'Exclusão lógica aplicada: o cliente sai das listagens e o histórico é preservado.',
     });
-  },
+  }),
 });

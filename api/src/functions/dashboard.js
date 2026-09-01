@@ -3,7 +3,7 @@ import { carregarDados, ETAPAS, STATUS_CLIENTE } from '../shared/dados.js';
 import {
   escopoDaRequisicao, oportunidadesVisiveis, tarefasVisiveis,
 } from '../shared/escopo.js';
-import { ok, naoEncontrado, erroInterno } from '../shared/http.js';
+import { ok, naoEncontrado, erroInterno , protegido } from '../shared/http.js';
 import { colecaoClientes, mongoConfigurado } from '../shared/mongo.js';
 
 /**
@@ -15,7 +15,7 @@ app.http('dashboard', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'dashboard',
-  handler: async (request) => {
+  handler: protegido(async (request) => {
     if (!mongoConfigurado()) {
       return erroInterno('MONGODB_URI não configurada: a coleção de clientes não está acessível');
     }
@@ -101,5 +101,5 @@ app.http('dashboard', {
       },
       ranking,
     });
-  },
+  }),
 });
