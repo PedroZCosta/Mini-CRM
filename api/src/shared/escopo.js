@@ -24,17 +24,16 @@ export function idsVisiveis(usuario) {
 }
 
 /**
- * Resolve o usuário do parâmetro `usuarioId`.
- * Sem parâmetro, assume o Administrador do seed: facilita testar a API no
+ * Resolve o usuário a partir do `usuarioId` informado.
+ * Sem `usuarioId`, assume o Administrador do seed: facilita testar a API no
  * navegador ou no Postman sem montar a query inteira.
  */
-export function escopoDaRequisicao(request) {
-  const id = request.query.get('usuarioId');
-  if (!id) {
+export function resolverEscopo(usuarioId) {
+  if (!usuarioId) {
     const admin = carregarDados().usuarios.find((u) => u.perfil === 'Admin');
     return { usuario: admin, ids: idsVisiveis(admin), padrao: true };
   }
-  const usuario = usuarioPorId(id);
+  const usuario = usuarioPorId(usuarioId);
   if (!usuario) return { usuario: null, ids: [], padrao: false };
   return { usuario, ids: idsVisiveis(usuario), padrao: false };
 }
