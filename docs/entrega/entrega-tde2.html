@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Entrega TDE 2 — Vertical Slice, Clean Architecture e SOLID</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1f2430;
+    line-height: 1.55;
+    font-size: 11.5pt;
+    margin: 0;
+  }
+  h1, h2, h3 { color: #10243e; line-height: 1.25; }
+  h1 { font-size: 24pt; margin-bottom: 4px; }
+  h2 {
+    font-size: 16pt;
+    border-bottom: 3px solid #2f6fed;
+    padding-bottom: 6px;
+    margin-top: 0;
+  }
+  h3 { font-size: 13pt; color: #2f6fed; margin-bottom: 4px; }
+  .capa {
+    height: 240mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+  }
+  .capa .tag {
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #2f6fed;
+    font-weight: 600;
+    font-size: 11pt;
+    margin-bottom: 18px;
+  }
+  .capa h1 { font-size: 30pt; }
+  .capa .subtitulo { font-size: 14pt; color: #555; margin-top: 6px; }
+  .capa .meta {
+    margin-top: 48px;
+    font-size: 11pt;
+    color: #444;
+  }
+  .capa .meta a { color: #2f6fed; }
+  .capa .integrantes {
+    margin-top: 32px;
+    display: inline-block;
+    text-align: left;
+    background: #f3f6fd;
+    border: 1px solid #d8e2f7;
+    border-radius: 10px;
+    padding: 18px 28px;
+  }
+  .capa .integrantes li { margin: 4px 0; }
+  .page-break { page-break-before: always; }
+  .quote {
+    background: #f6f7fb;
+    border-left: 4px solid #2f6fed;
+    padding: 10px 16px;
+    margin: 10px 0 14px;
+    font-style: italic;
+    color: #333;
+  }
+  .aluno-card {
+    border: 1px solid #e1e6f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    background: #fbfcff;
+  }
+  .badge {
+    display: inline-block;
+    background: #2f6fed;
+    color: white;
+    font-size: 9.5pt;
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10.5pt; }
+  th, td { border: 1px solid #d8dee9; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef2fb; }
+  img.diagrama {
+    width: 100%;
+    border: 1px solid #d8dee9;
+    border-radius: 6px;
+    margin: 10px 0 4px;
+  }
+  .legenda { font-size: 9.5pt; color: #666; margin-bottom: 18px; }
+  code { background: #eef0f5; padding: 1px 5px; border-radius: 4px; font-size: 10pt; }
+  ul { margin: 6px 0; }
+</style>
+</head>
+<body>
+
+<section class="capa">
+  <div class="tag">TDE 2 — Soluções Cloud</div>
+  <h1>Vertical Slice, Clean Architecture e SOLID</h1>
+  <div class="subtitulo">Refatoração do backend do Mini CRM (PJBL)</div>
+  <div class="meta">
+    Repositório: <a href="https://github.com/PedroZCosta/Mini-CRM">github.com/PedroZCosta/Mini-CRM</a><br>
+    Branch da entrega: <code>vertical-slice/clean-architeture</code><br>
+    Outubro de 2026
+  </div>
+  <div class="integrantes">
+    <strong>Integrantes do grupo</strong>
+    <ul>
+      <li>Nicolas Tancon</li>
+      <li>Leandro Canha</li>
+      <li>Pedro Henrique Z. Costa</li>
+      <li>Lincoln Neto</li>
+    </ul>
+  </div>
+</section>
+
+<section class="page-break">
+  <h2>1. O que foi pedido</h2>
+  <p>
+    O enunciado do TDE 2 pediu para aplicar três padrões de arquitetura e
+    design — <strong>Vertical Slice Architecture</strong>,
+    <strong>Clean Architecture</strong> e <strong>SOLID</strong> — no
+    backend do projeto Mini CRM que o grupo já vinha construindo no PJBL,
+    usando IA Generativa e seguindo exatamente a terminologia apresentada
+    em aula.
+  </p>
+
+  <h3>Vertical Slice Architecture</h3>
+  <p>
+    Em vez de organizar o código por camada técnica global (todos os
+    controllers juntos, todos os services juntos, todos os repositories
+    juntos), cada funcionalidade vira uma <em>fatia</em> que carrega tudo
+    que precisa — endpoint, regra, persistência — ponta a ponta. O ganho é
+    coesão local: mudar uma funcionalidade tende a ficar concentrado em um
+    módulo, em vez de atravessar várias pastas técnicas.
+  </p>
+
+  <h3>Clean Architecture</h3>
+  <p>
+    Organiza o código em camadas concêntricas — <strong>Entities</strong>
+    (regra de negócio pura), <strong>Use Cases</strong> (regra da
+    aplicação), <strong>Interface Adapters</strong> (tradução entre o
+    mundo externo e o núcleo) e <strong>Frameworks &amp; Drivers</strong>
+    (banco, web, frameworks) — com uma regra única: a <em>Dependency
+    Rule</em>. O código-fonte só pode apontar para dentro, nunca o
+    contrário. O núcleo não pode saber se existe Mongo, Azure Functions ou
+    qualquer outro detalhe técnico.
+  </p>
+
+  <h3>SOLID</h3>
+  <p>
+    Cinco princípios de design orientado a objetos: <strong>S</strong>
+    (uma razão principal para cada classe mudar), <strong>O</strong>
+    (estender sem reescrever o que já está estável), <strong>L</strong>
+    (um substituto preserva o contrato do original), <strong>I</strong>
+    (interfaces focadas no que o cliente realmente usa) e <strong>D</strong>
+    (código de alto nível depende de abstrações, não de detalhes
+    voláteis).
+  </p>
+
+  <h3>Como aplicamos nos três juntos</h3>
+  <p>
+    O backend (Azure Functions, Node.js) tinha 7 áreas de rota organizadas
+    por tipo técnico (<code>functions/</code> + <code>shared/</code>).
+    Cada área virou uma <em>vertical slice</em> própria
+    (<code>api/src/features/&lt;slice&gt;/</code>), e dentro de cada
+    slice aplicamos as camadas da Clean Architecture:
+    <code>domain/</code> (Entities), <code>application/</code> (Use Cases
+    e Ports — a interface que o SOLID pede para inverter a dependência),
+    e <code>adapters/</code> (Interface Adapters de entrada via HTTP e de
+    saída via MongoDB ou a massa mock). O que sobrou de comum entre
+    slices (conexão com o banco, resposta HTTP padronizada, a regra de
+    quem vê o quê) virou o <em>kernel compartilhado</em> em
+    <code>api/src/shared/</code> — o "shared mínimo" que os slides de
+    Vertical Slice recomendam manter pequeno.
+  </p>
+</section>
+
+<section class="page-break">
+  <h2>2. Divisão do trabalho</h2>
+  <p>
+    A divisão seguiu o peso de regra de negócio de cada área, não uma
+    rota para cada pessoa — algumas slices são bem maiores que outras.
+  </p>
+  <table>
+    <tr><th>Aluno</th><th>Slices</th><th>Por quê</th></tr>
+    <tr>
+      <td>Nicolas Tancon</td>
+      <td><code>clientes</code></td>
+      <td>A maior slice — único CRUD completo, com persistência real no MongoDB Atlas</td>
+    </tr>
+    <tr>
+      <td>Leandro Canha</td>
+      <td><code>oportunidades</code>, <code>tarefas</code></td>
+      <td>Regras de funil de vendas e vencimento calculado</td>
+    </tr>
+    <tr>
+      <td>Pedro Henrique Z. Costa</td>
+      <td><code>dashboard</code>, <code>interacoes</code></td>
+      <td>Agregação de indicadores e histórico do cliente</td>
+    </tr>
+    <tr>
+      <td>Lincoln Neto</td>
+      <td><code>usuarios</code>, <code>health</code>, kernel compartilhado</td>
+      <td>Slices mais simples + a infraestrutura que as outras 6 usam</td>
+    </tr>
+  </table>
+
+  <div class="aluno-card">
+    <span class="badge">Nicolas Tancon</span>
+    <h3>Slice <code>clientes</code></h3>
+    <div class="quote">
+      "Minha parte é a de clientes, que é a unica que grava em banco de
+      verdade. Separa isso em domain/application/adapters tipo o exemplo
+      do slide 11 do SOLID (aquele <code>order/api</code>,
+      <code>order/application</code>, <code>order/domain</code>,
+      <code>order/infrastructure</code>), mas com os nomes que a gente já
+      usa em português. Quero um port <code>ClienteRepository</code> e o
+      Mongo implementando ele, pra dar pra trocar por um fake nos teste
+      sem precisar do banco."
+    </div>
+    <p>
+      O que saiu: a entidade <code>Cliente</code> (regra pura, sem Mongo),
+      o port <code>ClienteRepository</code> e dois adapters
+      (<code>MongoClienteRepository</code> para o CRUD de verdade,
+      <code>MockHistoricoClienteRepository</code> para o histórico que
+      ainda vem da massa mock), 5 use cases — um por operação, aplicando
+      SRP — e o <code>clientes.controller.js</code> só traduzindo HTTP
+      para chamada de use case, sem nenhuma regra de negócio dentro.
+    </p>
+  </div>
+
+  <div class="aluno-card">
+    <span class="badge">Leandro Canha</span>
+    <h3>Slices <code>oportunidades</code> e <code>tarefas</code></h3>
+    <div class="quote">
+      "Fiquei com oportunidades e tarefas pq são as duas que tem regra de
+      negocio mais chata (fechar oportunidade perdida exige motivo,
+      reabrir exige confirmar, e tarefa concluida nao pode ter faixa de
+      vencimento). Quero as regra isolada numa funcao pura que da pra
+      testar sem subir nada, tipo o exemplo do <code>Order.addItem()</code>
+      do slide da Clean Architecture."
+    </div>
+    <p>
+      O que saiu: <code>domain/Oportunidade.js</code> com
+      <code>moverEtapa</code>, <code>promoveClienteParaAtivo</code> e
+      <code>foiReaberta</code> isoladas — testadas com <code>node --test</code>,
+      sem mock de Mongo nem de Azure Functions — e o mesmo tratamento para
+      <code>domain/Tarefa.js</code> com a regra de "vencida é sempre
+      derivado da data, nunca gravado". Os repositórios das duas slices
+      leem a massa mock, igual antes — nenhuma persistência nova.
+    </p>
+  </div>
+</section>
+
+<section class="page-break">
+  <div class="aluno-card">
+    <span class="badge">Pedro Henrique Z. Costa</span>
+    <h3>Slices <code>dashboard</code> e <code>interacoes</code></h3>
+    <div class="quote">
+      "Dashboard e interações ficaram comigo. O dashboard é só leitura,
+      agrega um monte de coisa (cliente, oportunidade, tarefa, ranking).
+      Minha duvida foi se o use case do dashboard podia importar direto o
+      repositorio da slice de oportunidades pra nao duplicar codigo. Me
+      expliquem se isso fere o Vertical Slice."
+    </div>
+    <p>
+      A resposta foi que sim, feriria — cada slice fica mais acoplada se
+      importar classe de dentro de outra. A solução: <code>dashboard</code>
+      define os próprios ports de leitura (<code>ClienteStatusRepository</code>,
+      <code>OportunidadeConsultaRepository</code>,
+      <code>TarefaConsultaRepository</code>,
+      <code>UsuarioConsultaRepository</code>), implementados contra o
+      kernel compartilhado — nunca contra a slice de oportunidades ou
+      tarefas diretamente. As contas de ranking e indicadores por etapa
+      viraram funções puras em <code>domain/Dashboard.js</code>, testadas
+      isoladas.
+    </p>
+  </div>
+
+  <div class="aluno-card">
+    <span class="badge">Lincoln Neto</span>
+    <h3>Slices <code>usuarios</code>, <code>health</code> e o kernel compartilhado</h3>
+    <div class="quote">
+      "Peguei as duas rotas mais simples (usuarios e health) e fiquei
+      responsavel por organizar o shared/, que é usado por todo mundo.
+      Achei estranho que a função de escopo (<code>escopoDaRequisicao</code>)
+      recebia o request inteiro do Azure Functions — isso não é tipo o
+      núcleo dependendo de um detalhe externo, que o slide da Clean
+      Architecture fala pra nunca fazer?"
+    </div>
+    <p>
+      Exatamente o que o slide da Clean Architecture chama de Regra das
+      Dependências ("código-fonte só deve apontar para dentro"). A
+      correção: <code>resolverEscopo(usuarioId)</code> passou a receber só
+      a string do id, e quem lê o <code>request.query</code> agora é o
+      controller HTTP de cada slice — o kernel não conhece mais o tipo de
+      request do Azure Functions. Esse ajuste também virou o
+      <code>EscopoService</code>, injetado nos use cases das outras 6
+      slices, e o <code>ClienteConsultaRepository</code> (leitura mock de
+      cliente usada por oportunidades, tarefas e interações).
+    </p>
+  </div>
+
+  <h2>3. O que deu certo e o que ficou pendente</h2>
+  <p>
+    O código ficou mais verboso — muito mais arquivos para a mesma
+    funcionalidade — que é exatamente o trade-off que os slides do SOLID
+    e da Clean Architecture avisam: "excesso de interfaces/classes" e
+    "overengineering em sistemas simples" são os riscos citados, e um CRM
+    pequeno como este é, em parte, o caso onde isso pesa mais que ajuda.
+    Aplicamos mesmo assim porque o objetivo aqui é o exercício acadêmico
+    dos três padrões, não o tamanho ideal de código para este projeto
+    específico.
+  </p>
+  <p>
+    Não foi possível rodar a suíte completa de 30 casos
+    (<code>api/scripts/testar-api.mjs</code>) no ambiente onde a IA
+    trabalhou, porque exige <code>MONGODB_URI</code> de um cluster
+    MongoDB Atlas de verdade. As 5 rotas que não dependem do Mongo
+    (<code>health</code>, <code>usuarios</code>, <code>oportunidades</code>,
+    <code>tarefas</code>, <code>interacoes</code>) foram conferidas
+    manualmente e responderam no formato esperado; os 17 testes unitários
+    de domínio (um por regra de negócio isolada) passam em todas as 7
+    slices. A validação final contra o MongoDB real fica para quem tiver
+    acesso às credenciais do Atlas do grupo.
+  </p>
+</section>
+
+<section class="page-break">
+  <h2>4. Diagrama de componentes do backend</h2>
+  <p class="legenda">
+    As 7 vertical slices, cada uma com suas camadas internas
+    (domain/application/adapters), e o kernel compartilhado na base. As
+    setas sempre apontam para dentro — nenhuma slice depende de outra
+    slice diretamente.
+  </p>
+  <img class="diagrama" src="diagramas/componentes-backend.png" alt="Diagrama de componentes do backend">
+</section>
+
+<section class="page-break">
+  <h2>5. Diagrama de classes — slice <code>clientes</code></h2>
+  <p class="legenda">
+    A slice mais completa: a entidade <code>Cliente</code>, os 5 use
+    cases (um por operação), o port <code>ClienteRepository</code> e sua
+    implementação real contra o MongoDB — a Dependency Inversion fica
+    visível aqui: os use cases dependem da interface, nunca da
+    implementação concreta.
+  </p>
+  <img class="diagrama" src="diagramas/classes-clientes.png" alt="Diagrama de classes da slice clientes">
+</section>
+
+<section class="page-break">
+  <h2>6. Diagrama de classes — demais slices</h2>
+  <p class="legenda">
+    Mesma notação, cobrindo oportunidades, tarefas, dashboard, interações,
+    usuários e health, para fechar o diagrama de classes do backend
+    inteiro.
+  </p>
+  <img class="diagrama" src="diagramas/classes-demais-slices.png" alt="Diagrama de classes das demais slices">
+</section>
+
+</body>
+</html>

@@ -157,3 +157,115 @@ problemas apareceram:
    de cada campo, então o Apidog inventava o valor. Resolvemos capturando a resposta
    real das 14 rotas com a API rodando e gravando cada uma como exemplo no
    `openapi.yaml`, o que de quebra melhorou a documentação publicada.
+
+---
+
+## Prompt 6: Vertical Slice, Clean Architecture e SOLID no backend
+
+> O professor pediu pra aplicar Vertical Slice e Clean Architecture e SOLID
+> no backend do TDE2, usando o codigo que a gente ja tinha. Anexei os 3
+> slides dele (Vertical Slice, SOLID e Clean Architecture) pra IA seguir
+> exatamente os termos que ele usa (Entities, Use Cases, Interface Adapters,
+> Frameworks and Drivers, e os 5 principios do SOLID). Pediu tambem pra
+> dividir em partes pra cada um dos 4 do grupo fazer uma parte e explicar o
+> que fez.
+
+A divisão saiu por peso de regra de negócio, não por "uma rota pra cada":
+quem pegou `clientes` pegou a parte maior (é a única com MongoDB de
+verdade); quem pegou `oportunidades`+`tarefas` pegou as regras de funil e
+vencimento; `dashboard`+`interacoes` ficou com agregação e histórico;
+`usuarios`+`health`+o kernel compartilhado (`shared/`) ficou pra quem monta
+a base que as outras slices usam.
+
+### Nicolas Tancon — slice `clientes`
+
+> Minha parte é a de clientes, que é a unica que grava em banco de
+> verdade. Separa isso em domain/application/adapters tipo o exemplo do
+> slide 11 do SOLID (aquele `order/api`, `order/application`, `order/domain`,
+> `order/infrastructure`), mas com os nomes que a gente já usa em
+> português. Quero um port `ClienteRepository` e o Mongo implementando ele,
+> pra dar pra trocar por um fake nos teste sem precisar do banco.
+
+O que saiu: a entidade `Cliente` (regra pura, sem Mongo), o port
+`ClienteRepository` e dois adapters (`MongoClienteRepository` pro CRUD de
+verdade, `MockHistoricoClienteRepository` pro histórico que ainda vem da
+massa mock), 5 use cases — um por operação (SRP) — e o `clientes.controller.js`
+só traduzindo HTTP pra chamada de use case, sem regra de negócio dentro.
+
+### Leandro Canha — slices `oportunidades` e `tarefas`
+
+> Fiquei com oportunidades e tarefas pq são as duas que tem regra de
+> negocio mais chata (fechar oportunidade perdida exige motivo, reabrir
+> exige confirmar, e tarefa concluida nao pode ter faixa de vencimento).
+> Quero as regra isolada numa funcao pura que da pra testar sem subir nada,
+> tipo o exemplo do `Order.addItem()` do slide da Clean Architecture.
+
+O que saiu: `domain/Oportunidade.js` com `moverEtapa`, `promoveClienteParaAtivo`
+e `foiReaberta` isoladas (e testadas com `node --test`, sem mock de Mongo
+nem de Azure Functions), e o mesmo pra `domain/Tarefa.js` com a regra do
+RF28. Os repositórios das duas slices leem a massa mock, igual antes —
+nada de persistência nova.
+
+### Pedro Costa — slices `dashboard` e `interacoes`
+
+> Dashboard e interações ficaram comigo. O dashboard é só leitura, agrega
+> um monte de coisa (cliente, oportunidade, tarefa, ranking). Minha duvida
+> foi se o use case do dashboard podia importar direto o repositorio da
+> slice de oportunidades pra nao duplicar codigo. Me expliquem se isso fere
+> o Vertical Slice.
+
+A resposta foi que sim, feriria — cada slice fica mais acoplada se importar
+classe de dentro da outra. A solução: `dashboard` define os próprios ports
+de leitura (`ClienteStatusRepository`, `OportunidadeConsultaRepository`,
+`TarefaConsultaRepository`, `UsuarioConsultaRepository`), implementados
+contra o kernel compartilhado — nunca contra a slice de oportunidades ou
+tarefas diretamente. As contas de ranking e indicadores por etapa viraram
+funções puras em `domain/Dashboard.js`, testadas isoladas.
+
+### Lincoln Neto — slices `usuarios`, `health` e o kernel compartilhado
+
+> Peguei as duas rotas mais simples (usuarios e health) e fiquei
+> responsavel por organizar o `shared/`, que é usado por todo mundo. Achei
+> estranho que a função de escopo (`escopoDaRequisicao`) recebia o
+> `request` inteiro do Azure Functions — isso não é tipo o núcleo
+> dependendo de um detalhe externo, que o slide da Clean Architecture fala
+> pra nunca fazer?
+
+Exatamente o que o slide 2 da Clean Architecture chama de Regra das
+Dependências ("código-fonte só deve apontar para dentro"). A correção:
+`resolverEscopo(usuarioId)` passou a receber só a string do id, e quem lê o
+`request.query` agora é o controller HTTP de cada slice — o kernel não
+conhece mais o tipo de request do Azure Functions. Esse ajuste também virou
+o `EscopoService`, injetado nos use cases das outras 6 slices, e o
+`ClienteConsultaRepository` (leitura mock de cliente usada por
+oportunidades, tarefas e interações).
+
+## Como dividimos o trabalho desta vez
+
+| Parte | O que a IA fez | O que o grupo fez |
+|---|---|---|
+| Kernel compartilhado | Extraiu `EscopoService` e `ClienteConsultaRepository`, corrigiu a dependência invertida do `escopoDaRequisicao` | Apontou o problema ao ler o diagrama de componentes |
+| `clientes` | Entity, port, 5 use cases, 2 adapters, controller | Revisou se o comportamento das 5 rotas continuava idêntico |
+| `oportunidades` + `tarefas` | Isolou as regras de funil/vencimento em funções puras testadas | Validou as regras contra a SPEC.md (RF08/RF09/RF29/RF13/RF28) |
+| `dashboard` + `interacoes` | Ports próprios por slice, sem acoplar com outras slices | Questionou o acoplamento entre slices, o que gerou a correção |
+| Diagramas | Gerou os 3 diagramas Mermaid e exportou para PNG | Conferiu visualmente antes de aprovar |
+| PDF da entrega | Montou o HTML e gerou o PDF a partir dele | Revisou o conteúdo final antes de entregar |
+
+## O que deu certo e o que ficou pendente
+
+O código ficou mais verboso (muito mais arquivos para a mesma funcionalidade),
+que é exatamente o trade-off que os slides do SOLID e da Clean Architecture
+avisam: "excesso de interfaces/classes" e "overengineering em sistemas
+simples" são os riscos citados, e um CRM pequeno como este é, em parte, o
+caso onde isso pesa mais que ajuda. Optamos por aplicar mesmo assim porque
+o objetivo aqui é o exercício acadêmico dos três padrões, não o tamanho
+ideal do código para este projeto específico.
+
+Não foi possível rodar a suíte completa de 30 casos (`testar-api.mjs`) no
+ambiente onde a IA trabalhou, porque exige `MONGODB_URI` de um cluster
+MongoDB Atlas de verdade, e essas credenciais não estavam disponíveis ali.
+Quem entregar precisa rodar `node api/scripts/testar-api.mjs` localmente
+(com `api/local.settings.json` configurado) antes de considerar a
+refatoração validada de ponta a ponta. As 5 rotas que não dependem do Mongo
+(`health`, `usuarios`, `oportunidades`, `tarefas`, `interacoes`) foram
+conferidas manualmente e responderam no formato esperado.
