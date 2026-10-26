@@ -14,8 +14,8 @@
   ],
   "scripts": {
     "start": "func start",
-    "test": "node --test test/*.test.mjs",
-    "test:arquitetura": "node --test test/arquitetura.test.mjs"
+    "test": "node --test --test-reporter=spec test/*.test.mjs",
+    "test:arquitetura": "node --test --test-reporter=spec test/arquitetura.test.mjs"
   },
   "dependencies": {
     "@azure/functions": "^4.16.2",
