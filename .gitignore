@@ -13,6 +13,11 @@ swa-cli.config.json.log
 docs/evidencias/
 docs/EVIDENCIAS-SEMANA05.md
 
-# PDFs de entrega: gerados localmente a partir dos .html, baixados e
-# publicados no Canvas — não fazem sentido versionados no repositório
+# Documentos de entrega (PDF/Word) e os .html/prints usados só para
+# gerá-los: a entrega final é feita em Word/PDF à parte, baixada e
+# publicada no Canvas — não fazem sentido versionados no repositório.
+# Os diagramas em docs/entrega/diagramas/ continuam versionados: são
+# parte pedida da entrega (markdown + imagem).
 docs/entrega/*.pdf
+docs/entrega/*.html
+docs/entrega/prints/
