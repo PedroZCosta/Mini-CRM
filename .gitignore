@@ -12,3 +12,7 @@ swa-cli.config.json.log
 # Evidências da entrega: ficam fora do repositório, viram documento no Word
 docs/evidencias/
 docs/EVIDENCIAS-SEMANA05.md
+
+# PDFs de entrega: gerados localmente a partir dos .html, baixados e
+# publicados no Canvas — não fazem sentido versionados no repositório
+docs/entrega/*.pdf
