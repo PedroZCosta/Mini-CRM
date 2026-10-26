@@ -269,3 +269,83 @@ Quem entregar precisa rodar `node api/scripts/testar-api.mjs` localmente
 refatoração validada de ponta a ponta. As 5 rotas que não dependem do Mongo
 (`health`, `usuarios`, `oportunidades`, `tarefas`, `interacoes`) foram
 conferidas manualmente e responderam no formato esperado.
+
+---
+
+## Prompt 7: testes de arquitetura (ArchUnitTS)
+
+> Agora o professor pediu pra aplicar isso no backend (ele chamou de "bff e
+> microservices", mas a gente só tem um backend mesmo, o das Azure
+> Functions) e, além disso, escrever testes unitarios de arquitetura. Ele
+> deu uma lista por linguagem: Java usa ArchUnit, C# usa ArchUnit.Net,
+> Python usa PyTestArch e Node usa ArchUnitTS. Como nosso backend é Node,
+> é o ArchUnitTS. Precisa de um documento Word ou PDF com evidencia do
+> codigo no github e print de tela da execução dos testes, com o nome dos
+> alunos. Pode continuar na mesma branch de antes, o vertical-slice.
+
+A primeira coisa foi achar a biblioteca certa, porque "ArchUnitTS" é o
+nome do projeto, mas o pacote no npm chama só `archunit`
+(github.com/LukasNiessen/ArchUnitTS). A segunda foi confirmar se ela
+funciona com o projeto, que é JavaScript puro (ESM, sem TypeScript) — a
+documentação da lib diz que "funciona com projetos JavaScript também, mas
+o melhor proveito é com TypeScript", sem detalhar o que isso significa na
+prática.
+
+> Antes de escrever os testes, testa se essa lib funciona mesmo com `.js`
+> puro, sem typescript, incluindo se ela detecta uma dependência errada de
+> verdade (não só "passa sempre verde"). Faz isso num projeto de exemplo
+> separado antes de mexer no nosso.
+
+Essa checagem valeu a pena: olhando o código-fonte da lib, achei um
+comentário `// TODO: include js` bem no meio da função que lista os
+arquivos do projeto — sinal de que a varredura de arquivos, numa certa
+versão, podia ignorar `.js` e só pegar `.ts`/`.tsx`. Só que, testando de
+verdade num projeto de exemplo com `tsconfig.json` configurado com
+`allowJs: true`, a lib detectou corretamente um import indevido (um
+`domain/` importando de dentro de `adapters/`) e não acusou nada onde não
+deveria. A análise de dependências em si (diferente da listagem inicial de
+arquivos) usa o compilador TypeScript via `ts-morph`, que com `allowJs`
+processa `.js` normalmente. Então funciona, mas só com um `tsconfig.json`
+no projeto — por isso `api/tsconfig.json` foi criado só para isso, sem
+mudar nada do jeito que a API roda (continua Node puro, sem compilar nada).
+
+### O que virou teste
+
+14 regras em `api/test/arquitetura.test.mjs`, usando `node --test` (igual
+aos outros testes do projeto, sem framework novo):
+
+| Regra | O que verifica |
+|---|---|
+| Sem ciclos | Nenhum arquivo de `src/` depende, direta ou indiretamente, de algo que depende dele de volta |
+| `domain` não depende de `adapters` | Regra das Dependências da Clean Architecture, em todas as 7 slices |
+| `domain` não depende de `application` | Entities não conhecem Use Cases |
+| `domain` não importa `@azure/functions` nem `mongodb` | Regra de negócio roda sem infraestrutura |
+| `application` não depende de `adapters` | Dependency Inversion Principle — use case depende do port, não do Mongo/HTTP concreto |
+| Isolamento entre slices (1 teste por slice) | Nenhuma das 7 slices importa arquivo de dentro de outra |
+| Nome dos ports | Todo arquivo em `application/ports/` termina em `Repository.js` |
+| Nome dos use cases | Todo arquivo em `application/use-cases/` termina em `UseCase.js` |
+
+> Antes de confiar que os testes funcionam, quebra uma regra de propósito
+> no nosso projeto de verdade (não só no exemplo) e confirma que o teste
+> falha. Se não falhar, o teste não serve pra nada.
+
+Fiz isso: importei um arquivo de `clientes/adapters` dentro de
+`oportunidades/domain` por um minuto, rodei a suíte, vi exatamente os dois
+testes esperados ficarem vermelhos (a regra de `domain` não depender de
+`adapters`, e o isolamento da slice `oportunidades`) sem nenhum dos outros
+12 reagir, e desfiz a mudança. Isso é o que prova, no documento da
+entrega, que o "verde" dos prints não é forjado.
+
+### Divisão dos prints entre os alunos
+
+Como os testes de arquitetura olham pro backend inteiro (não por slice
+isolada como antes), a divisão virou por qual regra cada aluno valida,
+mantendo a mesma área de responsabilidade de cada um na entrega anterior:
+Nicolas valida a regra de `domain`/`adapters` e o isolamento de
+`clientes`; Leandro valida `domain`/`application` e o isolamento de
+`oportunidades` e `tarefas`; Pedro valida a regra de Dependency Inversion
+(`application`/`adapters`) e o isolamento de `dashboard` e `interacoes`;
+Lincoln, que organizou o kernel compartilhado, valida a ausência de ciclos,
+a regra de frameworks externos, o isolamento de `usuarios`/`health` e as
+duas convenções de nome — e é quem tira o print da suíte completa rodando,
+já que foi ele quem configurou o `tsconfig.json` e instalou a lib.
