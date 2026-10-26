@@ -227,9 +227,12 @@ Mini-CRM/
 ├── docs/SPEC.md              especificação: requisitos, regras e decisões
 ├── docs/openapi.yaml         contrato das rotas, para importar no Apidog
 ├── api/                      Azure Functions (Node v4, ESM)
-│   ├── src/functions/        as 14 rotas
-│   ├── src/shared/           dados, escopo por perfil, validação, HTTP, MongoDB
+│   ├── src/features/         as 14 rotas, uma vertical slice por área
+│   │                         (domain/application/adapters + index.js)
+│   ├── src/shared/           kernel compartilhado: dados, escopo por perfil,
+│   │                         validação, HTTP, MongoDB
 │   ├── src/data/             massa mock gerada
+│   ├── test/                 testes unitários dos módulos de domínio
 │   └── scripts/              gerador, carga no MongoDB, testes e servidor local
 └── swa-cli.config.json       configuração do Static Web Apps CLI
 ```

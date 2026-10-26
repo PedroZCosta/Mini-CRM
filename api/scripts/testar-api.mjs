@@ -19,13 +19,13 @@ if (!process.env.MONGODB_URI) {
 const rotas = [];
 app.http = (nome, cfg) => rotas.push({ nome, ...cfg });
 
-await import('../src/functions/health.js');
-await import('../src/functions/usuarios.js');
-await import('../src/functions/dashboard.js');
-await import('../src/functions/clientes.js');
-await import('../src/functions/interacoes.js');
-await import('../src/functions/oportunidades.js');
-await import('../src/functions/tarefas.js');
+await import('../src/features/health/index.js');
+await import('../src/features/usuarios/index.js');
+await import('../src/features/dashboard/index.js');
+await import('../src/features/clientes/index.js');
+await import('../src/features/interacoes/index.js');
+await import('../src/features/oportunidades/index.js');
+await import('../src/features/tarefas/index.js');
 
 const contexto = { log: () => {} };
 

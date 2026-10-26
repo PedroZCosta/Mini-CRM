@@ -3,7 +3,15 @@
   "version": "1.0.0",
   "description": "Azure Functions com dados mock do Mini CRM (PJBL)",
   "type": "module",
-  "main": "src/functions/*.js",
+  "main": [
+    "src/features/health/index.js",
+    "src/features/usuarios/index.js",
+    "src/features/dashboard/index.js",
+    "src/features/clientes/index.js",
+    "src/features/interacoes/index.js",
+    "src/features/oportunidades/index.js",
+    "src/features/tarefas/index.js"
+  ],
   "scripts": {
     "start": "func start"
   },
