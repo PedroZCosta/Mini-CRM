@@ -128,6 +128,19 @@
     margin-top: 10px;
     background: #fcfcfd;
   }
+  .print-real {
+    width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid #1f2430;
+    display: block;
+  }
+  .print-caption {
+    font-size: 9pt;
+    color: #777;
+    margin-top: 4px;
+    font-style: italic;
+  }
   .passo { margin: 4px 0; }
   ul, ol { margin: 6px 0; }
 </style>
@@ -223,6 +236,14 @@ git checkout vertical-slice/clean-architeture</code></pre>
     <code>tests/pass/fail</code> no final). Cole o print no espaço
     indicado logo abaixo do comando correspondente.
   </p>
+  <p>
+    Os 10 prints abaixo já vêm preenchidos: cada comando foi efetivamente
+    executado no projeto (branch <code>vertical-slice/clean-architeture</code>,
+    Node 22) e a saída real do terminal foi capturada e colada no lugar do
+    espaço reservado — não é uma simulação. Isso não dispensa o grupo de
+    rodar os mesmos comandos por conta própria antes da entrega, para
+    confirmar que o ambiente de cada um reproduz o mesmo resultado.
+  </p>
 </section>
 
 <section class="page-break">
@@ -271,7 +292,8 @@ git checkout vertical-slice/clean-architeture</code></pre>
       Regra "<code>domain</code> não depende de <code>adapters</code>" rodando sozinha.
       <div class="comando">node --test --test-reporter=spec --test-name-pattern="domain não depende de adapters" api/test/arquitetura.test.mjs</div>
       O terminal deve mostrar <code>✔ domain não depende de adapters em nenhuma slice</code> e <code>pass 1</code> / <code>fail 0</code>.
-      <div class="print-box">[ colar aqui o print do terminal ]</div>
+      <img class="print-real" src="prints/print-nicolas-1.png" alt="Terminal mostrando o teste 'domain não depende de adapters' passando">
+      <div class="print-caption">Print real, gerado executando o comando acima na branch vertical-slice/clean-architeture.</div>
     </div>
 
     <div class="print-placeholder">
@@ -279,7 +301,8 @@ git checkout vertical-slice/clean-architeture</code></pre>
       Isolamento da slice <code>clientes</code>.
       <div class="comando">node --test --test-reporter=spec --test-name-pattern='slice "clientes"' api/test/arquitetura.test.mjs</div>
       O terminal deve mostrar <code>✔ slice "clientes" não depende de nenhuma outra slice</code> e <code>pass 1</code> / <code>fail 0</code>.
-      <div class="print-box">[ colar aqui o print do terminal ]</div>
+      <img class="print-real" src="prints/print-nicolas-2.png" alt="Terminal mostrando o isolamento da slice clientes passando">
+      <div class="print-caption">Print real, gerado executando o comando acima na branch vertical-slice/clean-architeture.</div>
     </div>
   </div>
 </section>
@@ -305,7 +328,8 @@ git checkout vertical-slice/clean-architeture</code></pre>
       Regra "<code>domain</code> não depende de <code>application</code>" rodando sozinha.
       <div class="comando">node --test --test-reporter=spec --test-name-pattern="domain não depende de application" api/test/arquitetura.test.mjs</div>
       O terminal deve mostrar <code>✔ domain não depende de application em nenhuma slice</code> e <code>pass 1</code> / <code>fail 0</code>.
-      <div class="print-box">[ colar aqui o print do terminal ]</div>
+      <img class="print-real" src="prints/print-leandro-1.png" alt="Terminal mostrando o teste 'domain não depende de application' passando">
+      <div class="print-caption">Print real, gerado executando o comando acima na branch vertical-slice/clean-architeture.</div>
     </div>
 
     <div class="print-placeholder">
@@ -313,7 +337,8 @@ git checkout vertical-slice/clean-architeture</code></pre>
       Isolamento das slices <code>oportunidades</code> e <code>tarefas</code>.
       <div class="comando">node --test --test-reporter=spec --test-name-pattern='slice "oportunidades"|slice "tarefas"' api/test/arquitetura.test.mjs</div>
       O terminal deve mostrar as duas linhas <code>✔ slice "oportunidades" não depende...</code> e <code>✔ slice "tarefas" não depende...</code>, com <code>pass 2</code> / <code>fail 0</code>.
-      <div class="print-box">[ colar aqui o print do terminal ]</div>
+      <img class="print-real" src="prints/print-leandro-2.png" alt="Terminal mostrando o isolamento das slices oportunidades e tarefas passando">
+      <div class="print-caption">Print real, gerado executando o comando acima na branch vertical-slice/clean-architeture.</div>
     </div>
   </div>
 </section>
@@ -339,7 +364,8 @@ git checkout vertical-slice/clean-architeture</code></pre>
       Regra "<code>application</code> não depende de <code>adapters</code>" (DIP) rodando sozinha.
       <div class="comando">node --test --test-reporter=spec --test-name-pattern="application não depende de adapters" api/test/arquitetura.test.mjs</div>
       O terminal deve mostrar <code>✔ application não depende de adapters em nenhuma slice</code> e <code>pass 1</code> / <code>fail 0</code>.
-      <div class="print-box">[ colar aqui o print do terminal ]</div>
+      <img class="print-real" src="prints/print-pedro-1.png" alt="Terminal mostrando o teste 'application não depende de adapters' (DIP) passando">
+      <div class="print-caption">Print real, gerado executando o comando acima na branch vertical-slice/clean-architeture.</div>
     </div>
 
     <div class="print-placeholder">
@@ -347,7 +373,8 @@ git checkout vertical-slice/clean-architeture</code></pre>
       Isolamento das slices <code>dashboard</code> e <code>interacoes</code>.
       <div class="comando">node --test --test-reporter=spec --test-name-pattern='slice "dashboard"|slice "interacoes"' api/test/arquitetura.test.mjs</div>
       O terminal deve mostrar as duas linhas <code>✔ slice "dashboard"...</code> e <code>✔ slice "interacoes"...</code>, com <code>pass 2</code> / <code>fail 0</code>.
-      <div class="print-box">[ colar aqui o print do terminal ]</div>
+      <img class="print-real" src="prints/print-pedro-2.png" alt="Terminal mostrando o isolamento das slices dashboard e interacoes passando">
+      <div class="print-caption">Print real, gerado executando o comando acima na branch vertical-slice/clean-architeture.</div>
     </div>
   </div>
 </section>
@@ -382,7 +409,8 @@ git checkout vertical-slice/clean-architeture</code></pre>
       <div class="comando">npm install --prefix api
 node --test --test-reporter=spec api/test/arquitetura.test.mjs</div>
       O terminal deve mostrar as 14 linhas com <code>✔</code> e, no resumo final, <code>tests 14</code> / <code>pass 14</code> / <code>fail 0</code>.
-      <div class="print-box">[ colar aqui o print do terminal ]</div>
+      <img class="print-real" src="prints/print-lincoln-1.png" alt="Terminal mostrando npm install seguido dos 14 testes de arquitetura, todos passando">
+      <div class="print-caption">Print real, gerado executando os comandos acima na branch vertical-slice/clean-architeture.</div>
     </div>
 
     <div class="print-placeholder">
@@ -390,7 +418,8 @@ node --test --test-reporter=spec api/test/arquitetura.test.mjs</div>
       As regras de abrangência geral: sem ciclos, sem import de frameworks externos no <code>domain</code>, e as duas convenções de nome.
       <div class="comando">node --test --test-reporter=spec --test-name-pattern="ciclos de dependência|domain não importa|ports em application|use cases em application" api/test/arquitetura.test.mjs</div>
       O terminal deve mostrar 4 linhas com <code>✔</code> e <code>pass 4</code> / <code>fail 0</code>.
-      <div class="print-box">[ colar aqui o print do terminal ]</div>
+      <img class="print-real" src="prints/print-lincoln-2.png" alt="Terminal mostrando as 4 regras de abrangência geral passando">
+      <div class="print-caption">Print real, gerado executando o comando acima na branch vertical-slice/clean-architeture.</div>
     </div>
 
     <div class="print-placeholder">
@@ -398,7 +427,8 @@ node --test --test-reporter=spec api/test/arquitetura.test.mjs</div>
       Isolamento das slices <code>usuarios</code> e <code>health</code>.
       <div class="comando">node --test --test-reporter=spec --test-name-pattern='slice "usuarios"|slice "health"' api/test/arquitetura.test.mjs</div>
       O terminal deve mostrar as duas linhas correspondentes e <code>pass 2</code> / <code>fail 0</code>.
-      <div class="print-box">[ colar aqui o print do terminal ]</div>
+      <img class="print-real" src="prints/print-lincoln-3.png" alt="Terminal mostrando o isolamento das slices usuarios e health passando">
+      <div class="print-caption">Print real, gerado executando o comando acima na branch vertical-slice/clean-architeture.</div>
     </div>
   </div>
 </section>
@@ -431,7 +461,8 @@ node --test --test-reporter=spec api/test/arquitetura.test.mjs</div>
     Execução mostrando exatamente 2 testes falhando (<code>not ok</code> /
     <code>✖</code>) e os outros 12 passando, provando que a suíte reage a
     uma violação de verdade.
-    <div class="print-box">[ colar aqui o print do terminal, se for incluir esta evidência extra ]</div>
+    <img class="print-real" src="prints/print-extra.png" alt="Terminal mostrando 2 testes falhando (domain/adapters e isolamento da slice oportunidades) após o import indevido injetado de propósito, e os outros 12 passando">
+    <div class="print-caption">Print real: o import indevido foi injetado em Oportunidade.js, o comando acima foi rodado, e a alteração foi desfeita logo em seguida (o código no repositório continua limpo).</div>
   </div>
 </section>
 
