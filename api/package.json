@@ -13,10 +13,15 @@
     "src/features/tarefas/index.js"
   ],
   "scripts": {
-    "start": "func start"
+    "start": "func start",
+    "test": "node --test test/*.test.mjs",
+    "test:arquitetura": "node --test test/arquitetura.test.mjs"
   },
   "dependencies": {
     "@azure/functions": "^4.16.2",
     "mongodb": "^7.6.0"
+  },
+  "devDependencies": {
+    "archunit": "^2.5.4"
   }
 }
